@@ -1,0 +1,66 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
+
+kapt {
+    arguments {
+        arg("moduleName", project.getName())
+//        arg("assetsPath", )
+    }
+}
+
+android {
+    compileSdkVersion versions.compileSdk
+    defaultConfig {
+        applicationId "com.github.richardwrq.krouter"
+        minSdkVersion versions.minSdk
+        targetSdkVersion versions.compileSdk
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = [moduleName: project.getName()]
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_7
+        targetCompatibility = JavaVersion.VERSION_1_7
+    }
+
+}
+afterEvaluate {
+    android.applicationVariants.all { variant ->
+        if (variant.buildType.name == 'debug') {
+            def kotlinGenerated = file("$buildDir/generated/source/kaptKotlin/${variant.name}")
+            variant.addJavaSourceFoldersToModel(kotlinGenerated)
+            return
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation deps.support.appcompat.v7
+    implementation deps.support.constraint
+    testImplementation deps.junit
+    androidTestImplementation deps.support.test.runner
+    androidTestImplementation deps.support.test.espresso.core
+    implementation deps.kotlin.stdLibJre8
+    implementation project(':krouter-annotation')
+    implementation project(':krouter-api')
+    implementation project(':module-java')
+//    annotationProcessor project(':krouter-compiler')
+    kapt project(':krouter-compiler')
+//    kapt 'org.rc.wrq:krouter-compiler:0.0.1'
+//    kapt 'org.rc.wrq:krouter-annotation:0.0.1@jar'
+}

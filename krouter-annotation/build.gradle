@@ -1,0 +1,14 @@
+apply plugin: 'java-library'
+apply plugin: 'kotlin'
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation deps.kotlin.stdLibJre8
+}
+
+sourceCompatibility = "1.7"
+targetCompatibility = "1.7"
+repositories {
+    mavenCentral()
+}
+apply from: project.rootDir.path + "/genMaven.gradle"

@@ -1,0 +1,70 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    ext.versions = [
+            'minSdk'        : 14,
+            'compileSdk'    : 27,
+
+            'supportLibrary': '27.0.2',
+            'androidPlugin' : '3.0.1',
+            'androidTools'  : '26.0.1',
+            'kotlin'        : '1.2.21',
+            'bintray'       : '1.7.3',
+            'dokka'         : '0.9.15',
+            'mavenPlugin'   : '2.0'
+    ]
+
+    ext.deps = [
+            android   : [
+                    'gradlePlugin': "com.android.tools.build:gradle:${versions.androidPlugin}"
+            ],
+            support   : [
+                    test      : [
+                            runner  : 'com.android.support.test:runner:1.0.1',
+                            espresso: [
+                                    core: 'com.android.support.test.espresso:espresso-core:3.0.1'
+                            ]
+                    ],
+                    appcompat : [
+                            'v7': "com.android.support:appcompat-v7:${versions.supportLibrary}",
+                    ],
+                    constraint: 'com.android.support.constraint:constraint-layout:1.0.2',
+                    compat    : "com.android.support:support-compat:${versions.supportLibrary}",
+                    fragment  : "com.android.support:support-fragment:${versions.supportLibrary}"
+            ],
+            kotlin    : [
+                    'stdLibJre8': "org.jetbrains.kotlin:kotlin-stdlib-jre8:${versions.kotlin}",
+                    'reflect'   : "org.jetbrains.kotlin:kotlin-reflect:${versions.kotlin}"
+            ],
+            auto      : [
+                    'service': 'com.google.auto.service:auto-service:1.0-rc2'
+            ],
+            kotlinpoet: 'com.squareup:kotlinpoet:0.6.0',
+            junit     : 'junit:junit:4.12',
+    ]
+    repositories {
+        google()
+        jcenter()
+    }
+    dependencies {
+        classpath deps.android.gradlePlugin
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:${versions.bintray}"
+        classpath "com.github.dcendents:android-maven-gradle-plugin:${versions.mavenPlugin}"
+        classpath "org.jetbrains.dokka:dokka-android-gradle-plugin:${versions.dokka}"
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+        maven { url "https://dl.bintray.com/qq263454190/Richard_Maven" }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

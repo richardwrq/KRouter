@@ -1,0 +1,1 @@
+include ':app', ':krouter-annotation', ':krouter-gradle-plugin', ':krouter-api', ':krouter-compiler', ':module-java'

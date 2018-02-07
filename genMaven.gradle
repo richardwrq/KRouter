@@ -1,0 +1,144 @@
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+
+if (project.hasProperty("kotlin")) {
+    apply plugin: 'org.jetbrains.dokka-android'
+    dokka {
+        outputFormat = 'html'
+        outputDirectory = "$buildDir/javadoc"
+    }
+}
+
+//配置bintray参数
+Properties properties = new Properties()
+properties.load(project.file('local.properties').newDataInputStream())
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+ext {
+    gitUrl = properties.getProperty("git.url")
+    siteUrl = properties.getProperty("site.url")
+    bintrayUser = properties.getProperty("bintray.user")
+    apiKey = properties.getProperty("bintray.api.key")
+    groupId = properties.getProperty("group")
+    artifactId = properties.getProperty("artifactId")
+    pkgDesc = properties.getProperty("desc")
+    versionName = properties.getProperty("version")
+    versionDesc = properties.getProperty("version.desc")
+    trackerUrl = properties.getProperty("tracker.url")
+
+    gpgPassphrase = properties.getProperty("gpg.passphrase")
+    mavenUser = properties.getProperty("maven.user")
+    mavenPwd = properties.getProperty("maven.pwd")
+}
+group = groupId
+version = versionName
+
+bintray {
+    user = bintrayUser
+    key = apiKey
+
+    configurations = ['archives']
+//    publications = ['MyPublication']
+
+    publish = true
+    override = true
+    pkg {
+        repo = "Richard_Maven"
+        name = artifactId
+        desc = pkgDesc
+        vcsUrl = gitUrl
+        websiteUrl = siteUrl
+        issueTrackerUrl = trackerUrl
+        licenses = ["Apache-2.0"]
+        version {
+            name = versionName
+            desc = versionDesc
+            released = new Date()
+            gpg {
+                sign = true //Determines whether to GPG sign the files. The default is false
+                passphrase = gpgPassphrase //Optional. The passphrase for GPG signing'
+            }
+            //Optional configuration for Maven Central sync of the version
+            mavenCentralSync {
+                sync = true //[Default: true] Determines whether to sync the version to Maven Central.
+                user = mavenUser //OSS user token: mandatory
+                password = mavenPwd //OSS user password: mandatory
+                close = '1'
+            }
+        }
+    }
+}
+
+//Maven
+install {
+    repositories.mavenInstaller {
+        // This generates POM.xml with proper parameters
+        pom.project {
+            packaging 'aar'
+            name artifactId
+            description pkgDesc
+            groupId groupId
+            artifactId artifactId
+            version versionName
+            url siteUrl
+            // Set your license
+            licenses {
+                license {
+                    name 'The Apache Software License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                }
+            }
+            developers {
+                developer {
+                    id 'qaz3366639'
+                    name 'RichardWu'
+                    email '263454190@qq.com'
+                }
+            }
+            scm {
+                connection gitUrl
+                developerConnection gitUrl
+                url siteUrl
+            }
+        }
+    }
+}
+
+//just copy paste the lines below
+if (project.hasProperty("kotlin")) { //Kotlin libraries
+    task sourcesJar(type: Jar) {
+        classifier = 'sources'
+        if (project.hasProperty("android")) {
+            from android.sourceSets.main.java.srcDirs
+        } else {
+            from sourceSets.main.allSource
+        }
+    }
+
+    javadoc.dependsOn 'dokka'
+} else if (project.hasProperty("android")) {
+    task sourcesJar(type: Jar) {
+        classifier = 'sources'
+        from android.sourceSets.main.java.srcDirs
+    }
+
+    task javadoc(type: Javadoc) {
+        source = android.sourceSets.main.java.srcDirs
+        classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    }
+} else { // Java libraries
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+    // options.encoding = 'UTF-8'
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
