@@ -11,4 +11,5 @@ targetCompatibility = "1.7"
 repositories {
     mavenCentral()
 }
-apply from: project.rootDir.path + "/genMaven.gradle"
+
+apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"

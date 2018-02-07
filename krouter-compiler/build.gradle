@@ -14,4 +14,4 @@ dependencies {
 //    compile 'org.rc.wrq:krouter-annotation:0.0.1'
 }
 
-apply from: project.rootDir.path + "/genMaven.gradle"
+apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"
