@@ -38,3 +38,4 @@ dependencies {
 //    implementation deps.krouter.api
 //    kapt deps.krouter.compiler
 }
+apply plugin: 'kotlin-android-extensions'

@@ -53,7 +53,6 @@ internal class Router private constructor() {
         return try {
             Class.forName(className)
         } catch (e: ClassNotFoundException) {
-            e.printStackTrace()
             null
         }
     }

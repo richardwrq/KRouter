@@ -30,6 +30,12 @@
 			android:layout_height="wrap_content"
 			android:onClick="openMyService"
 			android:text="openMyService"/>
+
+		<Button
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:onClick="bindService"
+			android:text="bindService"/>
 	</LinearLayout>
 
 </ScrollView>

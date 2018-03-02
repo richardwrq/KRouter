@@ -15,4 +15,5 @@ public class RouterTable {
     public static final String FGM2_PATH = "krouter/sample/fragment2";
 
     public static final String MY_SERVICE_PATH = "krouter/sample/MyService";
+    public static final String BIND_SERVICE_PATH = "krouter/sample/BindService";
 }

@@ -1,7 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 		  package="org.rc.wrq.module.java">
 
 	<application>
 		<service android:name="com.github.richardwrq.module.java.MyService"/>
+		<service
+			android:name="com.github.richardwrq.module.java.BindService"
+			android:enabled="true"
+			android:exported="true">
+		</service>
 	</application>
+
 </manifest>
