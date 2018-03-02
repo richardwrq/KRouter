@@ -1,4 +1,4 @@
-package com.github.richardwrq.krouter;
+package com.github.richardwrq.krouter.provider;
 
 import android.util.Log;
 

@@ -2,13 +2,11 @@ package com.github.richardwrq.krouter.api.core
 
 import android.app.Activity
 import android.app.Fragment
-import android.content.ActivityNotFoundException
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
+import android.content.*
 import android.os.Handler
 import android.os.Looper
 import android.support.v4.app.ActivityCompat
+import android.widget.Toast
 import com.github.richardwrq.krouter.annotation.RouteType
 import com.github.richardwrq.krouter.annotation.model.RouteMetadata
 import com.github.richardwrq.krouter.api.exceptions.HandleException
@@ -107,6 +105,11 @@ internal class ContentProviderHandler(routeMetadata: RouteMetadata) : AbsRouteHa
 
     override fun handle(context: Context, navigator: KRouter.Navigator): Any? {
         Logger.i("Handle Content Provider..")
+        if (Thread.currentThread() == Looper.getMainLooper().thread) {
+            Toast.makeText(context, "This version does not support start ContentProvider yet", Toast.LENGTH_SHORT).show()
+        } else {
+            Logger.w("This version does not support start ContentProvider yet")
+        }
         return null
     }
 }
@@ -131,7 +134,7 @@ internal class FragmentHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(r
 internal class FragmentV4tHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(routeMetadata) {
 
     override fun handle(context: Context, navigator: KRouter.Navigator): Any? {
-        Logger.i("Handle Fragment..")
+        Logger.i("Handle FragmentV4..")
         try {
             val clazz = Class.forName(routeMetadata.className)
             val fragment = clazz.newInstance() as android.support.v4.app.Fragment

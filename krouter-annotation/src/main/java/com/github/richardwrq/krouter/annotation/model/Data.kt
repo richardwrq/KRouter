@@ -58,3 +58,18 @@ data class InterceptorMetaData(
          * ClassName of Interceptor
          */
         val className: String)
+
+data class InjectorMetaData(
+        /**
+         * if true, throw NPE when the filed is null
+         */
+        val isRequired: Boolean = false,
+        /**
+         * key
+         */
+        val key: String = "",
+        /**
+         * field name
+         */
+        val fieldName: String = ""
+)

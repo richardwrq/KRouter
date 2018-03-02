@@ -2,8 +2,10 @@ package com.github.richardwrq.krouter.api.interfaces
 
 import android.content.Context
 import android.os.Bundle
+import com.github.richardwrq.krouter.annotation.model.InjectorMetaData
 import com.github.richardwrq.krouter.annotation.model.InterceptorMetaData
 import com.github.richardwrq.krouter.annotation.model.RouteMetadata
+import java.lang.reflect.Type
 import java.util.*
 
 /**
@@ -14,7 +16,7 @@ import java.util.*
  * @since: 18/1/4 下午6:38
  */
 interface IRouteLoader {
-    fun loadInto(map: HashMap<String, RouteMetadata>)
+    fun loadInto(map: MutableMap<String, RouteMetadata>)
 }
 
 /**
@@ -36,7 +38,7 @@ interface IInterceptorLoader {
  * @since: 18/1/5 上午9:12
  */
 interface IProviderLoader {
-    fun loadInto(map: HashMap<String, Class<*>>)
+    fun loadInto(map: MutableMap<String, Class<*>>)
 }
 
 /**
@@ -70,4 +72,14 @@ interface IProvider {
  */
 interface PathMatcher {
     fun match(path: String, path2: String): Boolean
+}
+
+interface IInjector {
+    fun inject(any: Any, extras: Bundle?)
+}
+
+interface SerializationProvider: IProvider {
+    fun <T> parseObject(text: String?, clazz: Type): T?
+
+    fun serialize(instance: Any): String
 }

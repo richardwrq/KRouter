@@ -1,6 +1,13 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
+
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+
     ext.versions = [
             'minSdk'        : 14,
             'compileSdk'    : 27,
@@ -39,8 +46,14 @@ buildscript {
             auto      : [
                     'service': 'com.google.auto.service:auto-service:1.0-rc2'
             ],
-            kotlinpoet: 'com.squareup:kotlinpoet:0.6.0',
+            kotlinpoet: 'com.squareup:kotlinpoet:0.7.0',
             junit     : 'junit:junit:4.12',
+            gson      : 'com.google.code.gson:gson:2.8.2',
+            krouter   : [
+                    'api': 'com.github.richardwrq:krouter-api:0.1.0',
+                    'compiler': 'com.github.richardwrq:krouter-compiler:0.1.0',
+                    'annotation': 'com.github.richardwrq:krouter-annotation:0.1.0'
+            ]
     ]
     repositories {
         google()
@@ -48,6 +61,8 @@ buildscript {
     }
     dependencies {
         classpath deps.android.gradlePlugin
+        classpath "com.gradle.publish:plugin-publish-plugin:0.9.10"
+        classpath "gradle.plugin.com.github.richardwrq:krouter-gradle-plugin:0.1.0"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
         classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:${versions.bintray}"
         classpath "com.github.dcendents:android-maven-gradle-plugin:${versions.mavenPlugin}"
@@ -61,7 +76,9 @@ allprojects {
     repositories {
         google()
         jcenter()
-        maven { url "https://dl.bintray.com/qq263454190/Richard_Maven" }
+        maven {
+            url "https://dl.bintray.com/qq263454190/Richard_Maven"
+        }
     }
 }
 
