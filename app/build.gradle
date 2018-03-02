@@ -1,13 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
-
-kapt {
-    arguments {
-        arg("moduleName", project.getName())
-//        arg("assetsPath", )
-    }
-}
+apply plugin: "com.github.richardwrq.krouter"
 
 android {
     compileSdkVersion versions.compileSdk
@@ -18,12 +12,6 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments = [moduleName: project.getName()]
-            }
-        }
     }
     buildTypes {
         release {
@@ -37,13 +25,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_7
     }
 
-}
-afterEvaluate {
-    android.applicationVariants.all { variant ->
-        if (variant.buildType.name == 'debug') {
-            def kotlinGenerated = file("$buildDir/generated/source/kaptKotlin/${variant.name}")
-            variant.addJavaSourceFoldersToModel(kotlinGenerated)
-            return
+    sourceSets {
+        debug {
+            assets.srcDirs = ['src/debug/assets']
+        }
+        release {
+            assets.srcDirs = ['src/release/assets']
         }
     }
 }
@@ -56,11 +43,9 @@ dependencies {
     androidTestImplementation deps.support.test.runner
     androidTestImplementation deps.support.test.espresso.core
     implementation deps.kotlin.stdLibJre8
-    implementation project(':krouter-annotation')
-    implementation project(':krouter-api')
+    implementation deps.gson
     implementation project(':module-java')
-//    annotationProcessor project(':krouter-compiler')
-    kapt project(':krouter-compiler')
-//    kapt 'org.rc.wrq:krouter-compiler:0.0.1'
-//    kapt 'org.rc.wrq:krouter-annotation:0.0.1@jar'
+    implementation project(':common')
+//    implementation deps.krouter.api
+//    kapt deps.krouter.compiler
 }

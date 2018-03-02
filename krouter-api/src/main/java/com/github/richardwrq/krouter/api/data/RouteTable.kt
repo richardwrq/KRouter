@@ -1,6 +1,6 @@
 package com.github.richardwrq.krouter.api.data
 
-import android.content.Context
+import com.github.richardwrq.krouter.annotation.model.InjectorMetaData
 import com.github.richardwrq.krouter.annotation.model.InterceptorMetaData
 import com.github.richardwrq.krouter.annotation.model.RouteMetadata
 import com.github.richardwrq.krouter.api.interfaces.PathMatcher
@@ -18,16 +18,14 @@ internal object RouteTable {
 
     internal val routes = HashMap<String, RouteMetadata>()
     internal val providers = HashMap<String, Class<*>>()
+    internal val injectors = HashMap<String, List<InjectorMetaData>>()
     internal val interceptors = TreeMap<Int, InterceptorMetaData>()
     internal val matchers = mutableListOf<PathMatcher>(DefaultMatcher)
-
-    fun init(context: Context) {
-
-    }
 
     fun clear() {
         routes.clear()
         providers.clear()
+        injectors.clear()
         interceptors.clear()
         matchers.clear()
     }

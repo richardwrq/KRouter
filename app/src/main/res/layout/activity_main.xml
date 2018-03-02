@@ -17,7 +17,19 @@
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
 			android:onClick="openMain2"
-			android:text=""/>
+			android:text="openMain2"/>
+
+		<Button
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:onClick="openMain3"
+			android:text="openMain3"/>
+
+		<Button
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:onClick="openMyService"
+			android:text="openMyService"/>
 	</LinearLayout>
 
 </ScrollView>

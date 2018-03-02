@@ -12,8 +12,12 @@ import android.support.v4.app.ActivityOptionsCompat
 import android.util.Size
 import android.util.SizeF
 import android.util.SparseArray
+import com.github.richardwrq.krouter.annotation.model.RouteMetadata
 import com.github.richardwrq.krouter.api.data.RouteTable
+import com.github.richardwrq.krouter.api.interfaces.IProvider
 import com.github.richardwrq.krouter.api.interfaces.PathMatcher
+import com.github.richardwrq.krouter.api.interfaces.SerializationProvider
+import com.github.richardwrq.krouter.api.utils.SERIALIZE_PATH
 import java.io.Serializable
 import java.util.*
 
@@ -40,6 +44,24 @@ object KRouter {
     fun handleMatcher(block: (MutableList<PathMatcher>) -> Unit): KRouter {
         block(RouteTable.matchers)
         return this
+    }
+
+    fun addRoutePath(block: (MutableMap<String, RouteMetadata>) -> Unit): KRouter {
+        block(RouteTable.routes)
+        return this
+    }
+
+    @JvmOverloads
+    fun inject(instance: Any, bundle: Bundle? = null) {
+        internalInject(instance, bundle)
+    }
+
+    /**
+     * return provider which matching path, if provider not found, null will return
+     */
+    fun <T> getProvider(path: String): T? {
+        @Suppress("UNCHECKED_CAST")
+        return Router.getInstance().route(path) as? T
     }
 
     @IntDef(FLAG_GRANT_READ_URI_PERMISSION.toLong(),
@@ -123,7 +145,7 @@ object KRouter {
             private set
 
         init {
-            val uri = Uri.parse(path)
+            val uri = Uri.parse(_path)
             uri.queryParameterNames.forEach {
                 extras.putString(it, uri.getQueryParameter(it))
             }
@@ -364,9 +386,14 @@ object KRouter {
             return this
         }
 
-        fun request() {
-            Router.getInstance().route(this)
+        fun withObject(key: String?, any: Any): Navigator {
+            val serializeProvider = getProvider<SerializationProvider>(SERIALIZE_PATH)
+                    ?: throw IllegalArgumentException("Missing SerializationProvider, Do you declare a class that implements the SerializationProvider interface?")
+            extras.putString(key, serializeProvider.serialize(any))
+            return this
         }
+
+        fun request(): Any? = Router.getInstance().route(this)
     }
 
 }

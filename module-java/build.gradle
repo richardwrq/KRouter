@@ -1,12 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
-
-kapt {
-    arguments {
-        arg("moduleName", project.getName())
-    }
-}
+apply plugin: "com.github.richardwrq.krouter"
 
 android {
     compileSdkVersion versions.compileSdk
@@ -39,9 +34,7 @@ dependencies {
     androidTestImplementation deps.support.test.espresso.core
 
     implementation deps.kotlin.stdLibJre8
-    implementation project (':krouter-annotation')
-    implementation project (':krouter-api')
-//    annotationProcessor project(':krouter-compiler')
-    kapt project(':krouter-compiler')
-//    kapt 'org.rc.wrq:krouter-compiler:0.0.1'
+    implementation project(':common')
+//    implementation deps.krouter.api
+//    kapt deps.krouter.compiler
 }

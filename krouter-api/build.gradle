@@ -26,12 +26,15 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation project(':krouter-annotation')
+    implementation 'com.github.richardwrq:krouter-annotation:0.1.0'
 
     testImplementation deps.junit
     androidTestImplementation deps.support.test.runner
     androidTestImplementation deps.support.test.espresso.core
     implementation deps.kotlin.stdLibJre8
     implementation deps.support.compat
-    implementation deps.support.fragment
+    api deps.support.fragment
+    implementation deps.kotlin.reflect
 }
+
+apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"

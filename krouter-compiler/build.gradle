@@ -6,12 +6,11 @@ apply plugin: 'kotlin'
 dependencies {
     implementation deps.auto.service
     kapt deps.auto.service
-    implementation project(':krouter-annotation')
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation deps.kotlin.reflect
     implementation deps.kotlin.stdLibJre8
     implementation deps.kotlinpoet
-//    compile 'org.rc.wrq:krouter-annotation:0.0.1'
+    compile 'com.github.richardwrq:krouter-annotation:0.1.0'
 }
 
 apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"

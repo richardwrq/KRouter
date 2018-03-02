@@ -2,6 +2,7 @@ package com.github.richardwrq.krouter.api.core
 
 import android.app.Fragment
 import android.content.Context
+import com.github.richardwrq.krouter.annotation.*
 import com.github.richardwrq.krouter.annotation.model.RouteMetadata
 import com.github.richardwrq.krouter.api.data.RouteTable
 import com.github.richardwrq.krouter.api.exceptions.HandleException
@@ -18,7 +19,7 @@ import java.util.*
  */
 internal class Router private constructor() {
 
-    private lateinit var context: Context
+    internal lateinit var context: Context
 
     private val PACKAGE = "com.github.richardwrq.krouter."
 
@@ -37,14 +38,34 @@ internal class Router private constructor() {
     }
 
     private fun loadRouteTable() {
-        (Class.forName("${PACKAGE}KRouter_InterceptorLoader_app").newInstance() as IInterceptorLoader).loadInto(RouteTable.interceptors)
-        (Class.forName("${PACKAGE}KRouter_ProviderLoader_app").newInstance() as IProviderLoader).loadInto(RouteTable.providers)
-        (Class.forName("${PACKAGE}KRouter_RouteLoader_app").newInstance() as IRouteLoader).loadInto(RouteTable.routes)
+        context.assets.list("").filter { it.startsWith("$PROJECT_NAME$SEPARATOR") }.forEach {
+            val moduleName = transferModuleName(it)
+            if (moduleName.isBlank()) {
+                return@forEach
+            }
+            (loadClassForName("$PACKAGE$INTERCEPTOR_LOADER_NAME$SEPARATOR$moduleName")?.newInstance() as? IInterceptorLoader)?.loadInto(RouteTable.interceptors)
+            (loadClassForName("$PACKAGE$PROVIDER_LOADER_NAME$SEPARATOR$moduleName")?.newInstance() as? IProviderLoader)?.loadInto(RouteTable.providers)
+            (loadClassForName("$PACKAGE$ROUTE_LOADER_NAME$SEPARATOR$moduleName")?.newInstance() as? IRouteLoader)?.loadInto(RouteTable.routes)
+        }
+    }
+
+    private fun loadClassForName(className: String): Class<*>? {
+        return try {
+            Class.forName(className)
+        } catch (e: ClassNotFoundException) {
+            e.printStackTrace()
+            null
+        }
     }
 
     fun route(navigator: KRouter.Navigator): Any? {
-
-        val handlers = createRouteHandler(addressingComponent(navigator))
+        val map = addressingComponent(navigator)
+        if (map.isEmpty()) {
+            Logger.w("${navigator.path} Not Found!")
+            navigator.routeFailedCallback?.invoke(navigator, "")
+            return null
+        }
+        val handlers = createRouteHandler(map)
         Logger.i("Found ${handlers.size} target for ${navigator.path}")
         val isIntercept = isIntercept(navigator)
         handlers.forEach {
@@ -55,6 +76,7 @@ internal class Router private constructor() {
                 } else {
                     Logger.d("Start handler ")
                     val result = it.handle(context, navigator)
+                    navigator.routeArrivedCallback?.invoke(navigator, it.routeMetadata.className)
                     if (result is Fragment || result is android.support.v4.app.Fragment) {
                         return result
                     }
@@ -102,7 +124,7 @@ internal class Router private constructor() {
         if (instance is IProvider) {
             instance.init(context)
         }
-        return clazz.newInstance()
+        return instance
     }
 
     object RoutePriorityComparator : Comparator<AbsRouteHandler> {

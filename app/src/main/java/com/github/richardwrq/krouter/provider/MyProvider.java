@@ -1,7 +1,8 @@
-package com.github.richardwrq.krouter;
+package com.github.richardwrq.krouter.provider;
 
 import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.github.richardwrq.krouter.annotation.Provider;
 import com.github.richardwrq.krouter.api.interfaces.IProvider;
@@ -20,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 public class MyProvider implements IProvider {
     @Override
     public void init(@NotNull Context context) {
+        Toast.makeText(context, "MyProvider init", Toast.LENGTH_SHORT).show();
         Log.i("MyProvider", "init!");
     }
 }
