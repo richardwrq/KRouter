@@ -26,7 +26,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation 'com.github.richardwrq:krouter-annotation:0.1.0'
+    implementation deps.krouter.annotation
 
     testImplementation deps.junit
     androidTestImplementation deps.support.test.runner

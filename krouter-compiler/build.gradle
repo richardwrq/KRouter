@@ -10,7 +10,7 @@ dependencies {
     implementation deps.kotlin.reflect
     implementation deps.kotlin.stdLibJre8
     implementation deps.kotlinpoet
-    compile 'com.github.richardwrq:krouter-annotation:0.1.0'
+    compile deps.krouter.annotation
 }
 
 apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"
