@@ -9,6 +9,10 @@
 			android:enabled="true"
 			android:exported="true">
 		</service>
+
+		<activity android:name="com.github.richardwrq.module.java.ResultActivity"
+			android:launchMode="standard">
+		</activity>
 	</application>
 
 </manifest>

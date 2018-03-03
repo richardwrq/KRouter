@@ -131,4 +131,16 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .request();
     }
+
+    public void startActivityForResult(View view) {
+        KRouter.INSTANCE.create(RouterTable.RESULT_ATY_PATH)
+                .withRequestCode(this, 2)
+                .request();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Toast.makeText(this, "result : " + data.getStringExtra("result"), Toast.LENGTH_SHORT).show();
+    }
 }

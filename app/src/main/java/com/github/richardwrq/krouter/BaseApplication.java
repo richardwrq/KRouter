@@ -14,6 +14,7 @@ public class BaseApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        KRouter.openDebug();
         KRouter.init(this);
     }
 }

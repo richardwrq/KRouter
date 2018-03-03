@@ -28,7 +28,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation deps.support.compat
+    implementation deps.support.appcompat.v7
     testImplementation deps.junit
     androidTestImplementation deps.support.test.runner
     androidTestImplementation deps.support.test.espresso.core
@@ -38,4 +38,3 @@ dependencies {
 //    implementation deps.krouter.api
 //    kapt deps.krouter.compiler
 }
-apply plugin: 'kotlin-android-extensions'

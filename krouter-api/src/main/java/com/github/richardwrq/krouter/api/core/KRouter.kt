@@ -1,6 +1,8 @@
 package com.github.richardwrq.krouter.api.core
 
 import android.annotation.TargetApi
+import android.app.Activity
+import android.app.Fragment
 import android.content.Context
 import android.content.Context.*
 import android.content.Intent.*
@@ -17,6 +19,7 @@ import com.github.richardwrq.krouter.api.data.RouteTable
 import com.github.richardwrq.krouter.api.interfaces.IProvider
 import com.github.richardwrq.krouter.api.interfaces.PathMatcher
 import com.github.richardwrq.krouter.api.interfaces.SerializationProvider
+import com.github.richardwrq.krouter.api.utils.Logger
 import com.github.richardwrq.krouter.api.utils.SERIALIZE_PATH
 import java.io.Serializable
 import java.util.*
@@ -54,6 +57,11 @@ object KRouter {
     @JvmOverloads
     fun inject(instance: Any, bundle: Bundle? = null) {
         internalInject(instance, bundle)
+    }
+
+    @JvmStatic
+    fun openDebug() {
+        Logger.openDebug()
     }
 
     /**
@@ -121,8 +129,6 @@ object KRouter {
             private set
         var exitAnim = -1
             private set
-        var optionsCompat = Bundle.EMPTY
-            private set
         var flags = 0
             private set
         var requestCode = -1
@@ -143,6 +149,13 @@ object KRouter {
             private set
         var serviceConn: ServiceConnection? = null
             private set
+        var activity: Activity? = null
+            private set
+        var fragment: Fragment? = null
+            private set
+        var fragmentV4: android.support.v4.app.Fragment? = null
+            private set
+        var options: Bundle? = null
 
         init {
             val uri = Uri.parse(_path)
@@ -325,11 +338,11 @@ object KRouter {
             return this
         }
 
-        fun withOptionsCompat(compat: ActivityOptionsCompat): Navigator {
-            optionsCompat = compat.toBundle() ?: Bundle.EMPTY
-            return this
-        }
-
+        /**
+         * Add animation to start or finish activity
+         * @param enterAnim enter animation
+         * @param exitAnim exit animation
+         */
         fun withTransition(enterAnim: Int, exitAnim: Int): Navigator {
             this.enterAnim = enterAnim
             this.exitAnim = exitAnim
@@ -346,16 +359,17 @@ object KRouter {
             return this
         }
 
-        fun withRequestCode(requestCode: Int): Navigator {
-            this.requestCode = requestCode
-            return this
-        }
-
+        /**
+         * @hide
+         */
         fun withUserHandle(userHandle: UserHandle): Navigator {
             this.userHandle = userHandle
             return this
         }
 
+        /**
+         * @hide
+         */
         fun withTimeout(timeout: Long): Navigator {
             this.timeout = timeout
             return this
@@ -383,6 +397,42 @@ object KRouter {
 
         fun withServiceConn(serviceConnection: ServiceConnection): Navigator {
             serviceConn = serviceConnection
+            return this
+        }
+
+        /**
+         * Calling this method will eventually start the Activity through the startActivityForResult method.
+         * @see [Activity.startActivityForResult]
+         */
+        @JvmOverloads
+        fun withRequestCode(activity: Activity, requestCode: Int, options: Bundle? = null): Navigator {
+            this.activity = activity
+            this.requestCode = requestCode
+            this.options = options
+            return this
+        }
+
+        /**
+         * Calling this method will eventually start the Activity through the startActivityForResult method.
+         * @see [Activity.startActivityForResult]
+         */
+        @JvmOverloads
+        fun withRequestCode(fragment: Fragment, requestCode: Int, options: Bundle? = null): Navigator {
+            this.fragment = fragment
+            this.requestCode = requestCode
+            this.options = options
+            return this
+        }
+
+        /**
+         * Calling this method will eventually start the Activity through the startActivityForResult method.
+         * @see [Activity.startActivityForResult]
+         */
+        @JvmOverloads
+        fun withRequestCode(fragment: android.support.v4.app.Fragment, requestCode: Int, options: Bundle? = null): Navigator {
+            fragmentV4 = fragment
+            this.requestCode = requestCode
+            this.options = options
             return this
         }
 

@@ -17,7 +17,8 @@
 				<category android:name="android.intent.category.LAUNCHER"/>
 			</intent-filter>
 		</activity>
-		<activity android:name=".activity.Main2Activity">
+		<activity android:name=".activity.Main2Activity"
+			android:launchMode="standard">
 		</activity>
 		<activity android:name=".activity.Main3Activity">
 		</activity>

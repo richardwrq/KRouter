@@ -13,9 +13,8 @@ class Logger {
 
     companion object {
         private val PREFIX = "[KRouter]::"
-        private var isDebug = true
+        private var isDebug = false
 
-        @JvmStatic
         fun openDebug() {
             isDebug = true
         }
