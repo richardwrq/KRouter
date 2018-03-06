@@ -114,6 +114,18 @@ class RouteProcessor : BaseProcessor() {
         val tmFragmentV4 = mElements.getTypeElement(FRAGMENT_V4.className)?.asType()
         val tmContentProvider = mElements.getTypeElement(CONTENT_PROVIDER.className).asType()
 
+        /**
+         * generate map code like:
+         * Map<String, RouteMetadata>
+         * 因为用MutableMap::class作为参数最终生成的kotlin代码类型是Map，而Map在kotlin中是只读的
+         */
+        val mapTypeOfRouteLoader = ParameterizedTypeName.get(ClassName("kotlin.collections", "MutableMap"), String::class.asClassName(), RouteMetadata::class.asClassName())
+
+        //Generate implement IRouteLoader interface class
+        val routeLoaderFunSpecBuild = FunSpec.builder(METHOD_LOAD)
+                .addParameter("map", mapTypeOfRouteLoader)
+                .addModifiers(KModifier.OVERRIDE)
+
         elements.forEach {
             val routeAnn = it.getAnnotation(Route::class.java)
             val routeType = when {
@@ -144,43 +156,27 @@ class RouteProcessor : BaseProcessor() {
             }
             if (routeAnn.path.isNotBlank()) {
                 if (routeMap.containsKey(routeAnn.path)) {
-                    mLogger.warning("The route ${routeMap[routeAnn.path]?.className} already has Path { ${routeAnn.path} }, so skip route ${it.asType()}")
+                    mLogger.warning("The route ${routeMap[routeAnn.path]?.name} already has Path { ${routeAnn.path} }, so skip route ${it.asType()}")
                     return@forEach
                 }
-                val routeMetaData = RouteMetadata(routeType, routeAnn.priority, routeAnn.name.trim(), routeAnn.path.trim(), routeAnn.pathPrefix.trim(), routeAnn.pathPattern.trim(), it.asType().toString())
-                routeMap[routeAnn.path] = routeMetaData
+                routeMap[routeAnn.path] = RouteMetadata(name = it.asType().toString())
+
+                routeLoaderFunSpecBuild.addStatement(
+                        "map[%S] = %T(%T.%L, %L, %S, %S, %S, %S, %T::class.java)",
+                        routeAnn.path,
+                        RouteMetadata::class,
+                        RouteType::class,
+                        routeType,
+                        routeAnn.priority,
+                        routeAnn.name,
+                        routeAnn.path,
+                        routeAnn.pathPrefix,
+                        routeAnn.pathPattern,
+                        it.asType())
             }
 //            pack = processingEnv.elementUtils.getPackageOf(it).toString()
         }
-        generateKotlin()
-    }
 
-    private fun generateKotlin() {
-
-        /**
-         * generate map code like:
-         * Map<String, RouteMetadata>
-         * 因为用MutableMap::class作为参数最终生成的kotlin代码类型是Map，而Map在kotlin中是只读的
-         */
-        val mapTypeOfRouteLoader = ParameterizedTypeName.get(ClassName("kotlin.collections", "MutableMap"), String::class.asClassName(), RouteMetadata::class.asClassName())
-
-        //Generate implement IRouteLoader interface class
-        val routeLoaderFunSpecBuild = FunSpec.builder(METHOD_LOAD)
-                .addParameter("map", mapTypeOfRouteLoader)
-                .addModifiers(KModifier.OVERRIDE)
-        routeMap.forEach { s, routeMetaData ->
-            routeLoaderFunSpecBuild.addStatement(
-                    "map[\"$s\"] = %T(%T.%L, %L, %S, %S, %S, %S, %S)",
-                    RouteMetadata::class,
-                    RouteType::class,
-                    routeMetaData.routeType,
-                    routeMetaData.priority,
-                    routeMetaData.name,
-                    routeMetaData.path,
-                    routeMetaData.pathPrefix,
-                    routeMetaData.pathPattern,
-                    routeMetaData.className)
-        }
         val typeIRouteLoader = TypeSpec.classBuilder("$ROUTE_LOADER_NAME$SEPARATOR$mFormatModuleName")
                 .addSuperinterface(ClassName.bestGuess(ROUTE_LOADER))
                 .addKdoc(WARNINGS)
@@ -191,7 +187,6 @@ class RouteProcessor : BaseProcessor() {
                 .addType(typeIRouteLoader)
                 .build()
         kotlinFile.writeFile()
-
     }
 }
 
@@ -233,20 +228,19 @@ class InterceptorProcessor : BaseProcessor() {
             val interceptorAnn = it.getAnnotation(Interceptor::class.java)
 
             if (mTypes.isSubtype(it.asType(), tmIInterceptor)) {
-                val interceptorClass = it.asType().toString()
                 if (interceptorMap.containsKey(interceptorAnn.priority)) {
-                    val existClass = interceptorMap[interceptorAnn.priority]?.className
-                    mLogger.warning("Priority [${interceptorAnn.priority}] interceptor [$existClass] already exist, $interceptorClass will be skip")
+                    val existClass = interceptorMap[interceptorAnn.priority]?.name
+                    mLogger.warning("Priority [${interceptorAnn.priority}] interceptor [$existClass] already exist, ${it.asType()} will be skip")
                     return@forEach
                 }
-                interceptorMap[interceptorAnn.priority] = InterceptorMetaData(interceptorAnn.priority, interceptorAnn.name.trim(), interceptorClass)
+                interceptorMap[interceptorAnn.priority] = InterceptorMetaData(name = it.asType().toString())
                 mLogger.info("Found Interceptor ${it.asType()} in [$mOriginalModuleName]")
                 interceptorLoaderFun.addStatement(
-                        "map[${interceptorAnn.priority}] = %T(%L, %S, %S)",
+                        "map[${interceptorAnn.priority}] = %T(%L, %S, %T::class.java)",
                         InterceptorMetaData::class,
                         interceptorAnn.priority,
                         interceptorAnn.name.trim(),
-                        interceptorClass)
+                        it.asType())
             } else {
                 mLogger.warning("Interceptor ${it.simpleName} does not impl IInterceptor")
             }

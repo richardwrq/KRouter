@@ -48,7 +48,7 @@ internal fun createHandler(routeMetadata: RouteMetadata): AbsRouteHandler {
  */
 internal class UnknownRouteHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(routeMetadata) {
     override fun handle(context: Context, navigator: KRouter.Navigator) {
-        Logger.w("Unknown route : ${routeMetadata.className}")
+        Logger.w("Unknown route : ${routeMetadata.clazz.name}")
     }
 }
 
@@ -60,20 +60,21 @@ internal class ActivityHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(r
     override fun handle(context: Context, navigator: KRouter.Navigator): Any? {
         Logger.i("Handle Activity..")
         val intent = Intent()
-        val component = try {
-            val clazz = Class.forName(routeMetadata.className)
-            ComponentName(context, clazz)
-        } catch (e: ClassNotFoundException) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            ComponentName(context, routeMetadata.className)
-        }
+        val component = ComponentName(context, routeMetadata.clazz)
+//                try {
+//            val clazz = routeMetadata.clazz
+//            ComponentName(context, clazz)
+//        } catch (e: ClassNotFoundException) {
+//            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+//            ComponentName(context, routeMetadata.className)
+//        }
         intent.setComponent(component)
                 .addFlags(navigator.flags)
                 .putExtras(navigator.extras)
         Handler(Looper.getMainLooper()).post {
             try {
                 if (navigator.requestCode > 0) {
-                    Logger.d("startActivityForResult >> ${routeMetadata.className}")
+                    Logger.d("startActivityForResult >> ${routeMetadata.clazz.simpleName}")
                     when {
                         navigator.activity != null -> {
                             navigator.activity!!.startActivityForResult(
@@ -102,13 +103,13 @@ internal class ActivityHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(r
                         }
                     }
                 } else {
-                    Logger.d("startActivity >> ${routeMetadata.className}")
+                    Logger.d("startActivity >> ${routeMetadata.clazz.simpleName}")
                     ActivityCompat.startActivity(context, intent, navigator.options)
                 }
                 if ((navigator.enterAnim > 0 || navigator.exitAnim > 0) && context is Activity) {
                     context.overridePendingTransition(navigator.enterAnim, navigator.exitAnim)
                 }
-                navigator.routeArrivedCallback?.invoke(navigator, routeMetadata.className)
+                navigator.routeArrivedCallback?.invoke(navigator, routeMetadata.clazz.name)
             } catch (e: ActivityNotFoundException) {
                 throw RouteNotFoundException(e)
             }
@@ -124,7 +125,7 @@ internal class ServiceHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(ro
 
     override fun handle(context: Context, navigator: KRouter.Navigator): Any? {
         Logger.i("Handle Service..")
-        val intent = Intent().setComponent(ComponentName(context, routeMetadata.className))
+        val intent = Intent().setComponent(ComponentName(context, routeMetadata.clazz))
                 .putExtras(navigator.extras)
         if (navigator.serviceConn != null) {
             Logger.i("Bind Service")
@@ -132,7 +133,7 @@ internal class ServiceHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(ro
         } else {
             try {
                 context.startService(intent)
-                        ?: throw RouteNotFoundException("Service ${routeMetadata.className} not found!")
+                        ?: throw RouteNotFoundException("Service ${routeMetadata.clazz.simpleName} not found!")
             } catch (e: SecurityException) {
                 throw HandleException(e)
             } catch (e: IllegalStateException) {
@@ -167,7 +168,7 @@ internal class FragmentHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(r
     override fun handle(context: Context, navigator: KRouter.Navigator): Any? {
         Logger.i("Handle Fragment..")
         try {
-            val clazz = Class.forName(routeMetadata.className)
+            val clazz = routeMetadata.clazz
             val fragment = clazz.newInstance() as Fragment
             fragment.arguments = navigator.extras
             return fragment
@@ -187,12 +188,10 @@ internal class FragmentV4tHandler(routeMetadata: RouteMetadata) : AbsRouteHandle
     override fun handle(context: Context, navigator: KRouter.Navigator): Any? {
         Logger.i("Handle FragmentV4..")
         try {
-            val clazz = Class.forName(routeMetadata.className)
+            val clazz = routeMetadata.clazz
             val fragment = clazz.newInstance() as android.support.v4.app.Fragment
             fragment.arguments = navigator.extras
             return fragment
-        } catch (e: ClassNotFoundException) {
-            throw RouteNotFoundException(e)
         } catch (e: ClassCastException) {
             throw HandleException(e)
         }

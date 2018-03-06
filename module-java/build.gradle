@@ -25,6 +25,12 @@ android {
 
 }
 
+//kapt {
+//    arguments {
+//        arg("moduleName", project.getName())
+//    }
+//}
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
@@ -35,6 +41,10 @@ dependencies {
 
     implementation deps.kotlin.stdLibJre8
     implementation project(':common')
+//    implementation project(':krouter-api')
+//    implementation project(':krouter-annotation')
+//    kapt project(':krouter-compiler')
+
 //    implementation deps.krouter.api
 //    kapt deps.krouter.compiler
 }

@@ -1,12 +1,18 @@
 package com.github.richardwrq.krouter.activity;
 
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.github.richardwrq.krouter.R;
@@ -31,11 +37,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
         Bundle bundle = new Bundle();
-//        bundle.putString("test", "inject main1");
+        //        bundle.putString("test", "inject main1");
         getIntent().putExtras(bundle);
         KRouter.INSTANCE.inject(this);
-        setContentView(R.layout.activity_main);
         Toast.makeText(this, test, Toast.LENGTH_SHORT).show();
     }
 
@@ -133,14 +139,39 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void startActivityForResult(View view) {
-        KRouter.INSTANCE.create(RouterTable.RESULT_ATY_PATH)
-                .withRequestCode(this, 2)
-                .request();
+        Fragment fragment = (Fragment) KRouter.INSTANCE.create("myfragment").request();
+        Toast.makeText(this, "找到Fragment: " + fragment.getClass().getSimpleName() + ", hashcode: " + fragment, Toast.LENGTH_SHORT).show();
+//        KRouter.INSTANCE.create(RouterTable.RESULT_ATY_PATH)
+//                .withRequestCode(this, 2)
+//                .request();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         Toast.makeText(this, "result : " + data.getStringExtra("result"), Toast.LENGTH_SHORT).show();
+    }
+
+    @Route(path = "myfragment")
+    public static class MyFragment extends Fragment {
+        @Override
+        public void onAttach(Context context) {
+            super.onAttach(context);
+            Log.d("MyFragment", "onAttach: ");
+        }
+
+        @Override
+        public void onCreate(@Nullable Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            Log.d("MyFragment", "onCreate: ");
+        }
+
+        @Nullable
+        @Override
+        public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+            View view = inflater.inflate(R.layout.activity_main, container, false);
+            Log.d("MyFragment", "onCreateView: ");
+            return view;
+        }
     }
 }

@@ -68,21 +68,21 @@ internal class Router private constructor() {
         Logger.i("Found ${handlers.size} target for ${navigator.path}")
         val isIntercept = isIntercept(navigator)
         handlers.forEach {
-            navigator.beforeRouteCallback?.invoke(navigator, it.routeMetadata.className)
+            navigator.beforeRouteCallback?.invoke(navigator, it.routeMetadata.clazz.name)
             try {
                 if (isIntercept) {
-                    navigator.routeInterceptCallback?.invoke(navigator, it.routeMetadata.className)
+                    navigator.routeInterceptCallback?.invoke(navigator, it.routeMetadata.clazz.name)
                 } else {
                     Logger.d("Start handler ")
                     val result = it.handle(context, navigator)
-                    navigator.routeArrivedCallback?.invoke(navigator, it.routeMetadata.className)
+                    navigator.routeArrivedCallback?.invoke(navigator, it.routeMetadata.clazz.name)
                     if (result is Fragment || result is android.support.v4.app.Fragment) {
                         return result
                     }
                 }
             } catch (e: HandleException) {
                 e.printStackTrace()
-                navigator.routeFailedCallback?.invoke(navigator, it.routeMetadata.className)
+                navigator.routeFailedCallback?.invoke(navigator, it.routeMetadata.clazz.name)
             }
         }
         return null
@@ -104,14 +104,14 @@ internal class Router private constructor() {
     private fun isIntercept(navigator: KRouter.Navigator): Boolean {
         return RouteTable.interceptors.asSequence().find {
             try {
-                val cls = Class.forName(it.value.className)
+                val cls = it.value.clazz
                 val interceptor = cls.newInstance() as IRouteInterceptor
                 Logger.i("Before intercept!")
                 return@find interceptor.intercept(context, navigator.path, navigator.extras)
             } catch (e: ClassNotFoundException) {
                 e.printStackTrace()
             } catch (e: ClassCastException) {
-                Logger.e("${it.value.className} is not impl IRouteInterceptor")
+                Logger.e("${it.value.clazz.name} is not impl IRouteInterceptor")
             }
             return@find false
         } != null

@@ -13,6 +13,9 @@ import org.gradle.api.Project
 class KRouterPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
+
+        project.extensions.create("krouter", KRouterExtension)
+
         def kaptExtension = project.extensions.getByName('kapt')
         def androidExtension = project.extensions.getByName("android")
         if (kaptExtension != null) {
@@ -21,14 +24,16 @@ class KRouterPlugin implements Plugin<Project> {
             }
         }
 
-        project.configurations.all { configuration ->
-            def name = configuration.name
-            if (name == "implementation" || name == "compile") {
-                System.out.printf("Add krouter-api dependency")
-                configuration.dependencies.add(project.dependencies.create(Const.KROUTER_API))
-            } else if (name == "kapt") {
-                System.out.printf("Add krouter-compiler dependency")
-                configuration.dependencies.add(project.dependencies.create(Const.KROUTER_COMPILER))
+        if (project["krouter"].autoAddDependency) {
+            project.configurations.all { configuration ->
+                def name = configuration.name
+                if (name == "implementation" || name == "compile") {
+                    System.out.printf("Add krouter-api dependency")
+                    configuration.dependencies.add(project.dependencies.create(Const.KROUTER_API))
+                } else if (name == "kapt") {
+                    System.out.printf("Add krouter-compiler dependency")
+                    configuration.dependencies.add(project.dependencies.create(Const.KROUTER_COMPILER))
+                }
             }
         }
 

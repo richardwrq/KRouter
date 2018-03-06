@@ -17,27 +17,27 @@ data class RouteMetadata(
         /**
          * Priority of route
          */
-        val priority: Int,
+        val priority: Int = -1,
         /**
          * Name of route
          */
-        val name: String,
+        val name: String = "undefine",
         /**
          * Path of route
          */
-        val path: String,
+        val path: String = "",
         /**
          * PathPrefix of route
          */
-        val pathPrefix: String,
+        val pathPrefix: String = "",
         /**
          * PathPattern of route
          */
-        val pathPattern: String,
+        val pathPattern: String = "",
         /**
-         * ClassName of route
+         * Class of route
          */
-        val className: String)
+        val clazz: Class<*> = Any::class.java)
 /**
  * User: WuRuiqiang(263454190@qq.com)
  * Date: 18/1/8
@@ -49,15 +49,15 @@ data class InterceptorMetaData(
         /**
          * Priority of Interceptor
          */
-        val priority: Int,
+        val priority: Int = -1,
         /**
          * Name of Interceptor
          */
-        val name: String,
+        val name: String = "undefine",
         /**
-         * ClassName of Interceptor
+         * Class desc of Interceptor
          */
-        val className: String)
+        val clazz: Class<*> = Any::class.java)
 
 data class InjectorMetaData(
         /**

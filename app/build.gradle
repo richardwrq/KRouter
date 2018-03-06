@@ -3,6 +3,12 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 apply plugin: "com.github.richardwrq.krouter"
 
+//kapt {
+//    arguments {
+//        arg("moduleName", project.getName())
+//    }
+//}
+
 android {
     compileSdkVersion versions.compileSdk
     defaultConfig {
@@ -46,6 +52,7 @@ dependencies {
     implementation deps.gson
     implementation project(':module-java')
     implementation project(':common')
-//    implementation deps.krouter.api
-//    kapt deps.krouter.compiler
+//    implementation project(':krouter-api')
+//    implementation project(':krouter-annotation')
+//    kapt project(':krouter-compiler')
 }

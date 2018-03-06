@@ -27,12 +27,13 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     implementation deps.krouter.annotation
+//    implementation project(":krouter-annotation")
 
     testImplementation deps.junit
     androidTestImplementation deps.support.test.runner
     androidTestImplementation deps.support.test.espresso.core
     implementation deps.kotlin.stdLibJre8
-    implementation deps.support.compat
+//    implementation deps.support.compat
     api deps.support.fragment
     implementation deps.kotlin.reflect
 }
