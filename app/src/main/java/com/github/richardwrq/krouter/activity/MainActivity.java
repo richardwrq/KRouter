@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
     public void openMain2(View view) {
         KRouter.INSTANCE.create(RouterTable.MAIN2_ATY_PATH)
                 .withObject("person", new Person())
+//                .withTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
                 .withFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 .request();
     }
@@ -139,11 +140,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void startActivityForResult(View view) {
-        Fragment fragment = (Fragment) KRouter.INSTANCE.create("myfragment").request();
-        Toast.makeText(this, "找到Fragment: " + fragment.getClass().getSimpleName() + ", hashcode: " + fragment, Toast.LENGTH_SHORT).show();
-//        KRouter.INSTANCE.create(RouterTable.RESULT_ATY_PATH)
-//                .withRequestCode(this, 2)
-//                .request();
+//        Fragment fragment = (Fragment) KRouter.INSTANCE.create("myfragment").request();
+//        Toast.makeText(this, "找到Fragment: " + fragment.getClass().getSimpleName() + ", hashcode: " + fragment, Toast.LENGTH_SHORT).show();
+        KRouter.INSTANCE.create(RouterTable.RESULT_ATY_PATH)
+                .withRequestCode(this, 2)
+                .request();
     }
 
     @Override

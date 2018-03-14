@@ -7,7 +7,7 @@ import com.github.richardwrq.krouter.annotation.RouteType
  * Date: 18/1/4
  * Time: 上午10:46
  * Version: v1.0
- * Description：
+ * Description：Route元数据，用于存储被[com.github.richardwrq.krouter.annotation.Route]注解的类的信息
  */
 data class RouteMetadata(
         /**
@@ -43,7 +43,7 @@ data class RouteMetadata(
  * Date: 18/1/8
  * Time: 下午10:46
  * Version: v1.0
- * Description：
+ * Description：Interceptor元数据，用于存储被[com.github.richardwrq.krouter.annotation.Interceptor]注解的类的信息
  */
 data class InterceptorMetaData(
         /**
@@ -59,6 +59,13 @@ data class InterceptorMetaData(
          */
         val clazz: Class<*> = Any::class.java)
 
+/**
+ * User: WuRuiqiang(263454190@qq.com)
+ * Date: 18/3/14
+ * Time: 上午1:28
+ * Version: v1.0
+ * Description：Injector元数据，用于存储被[com.github.richardwrq.krouter.annotation.Inject]注解的类的信息
+ */
 data class InjectorMetaData(
         /**
          * if true, throw NPE when the filed is null
@@ -71,5 +78,4 @@ data class InjectorMetaData(
         /**
          * field name
          */
-        val fieldName: String = ""
-)
+        val fieldName: String = "")

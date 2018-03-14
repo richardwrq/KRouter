@@ -5,7 +5,7 @@ import com.github.richardwrq.krouter.annotation.getInjectorClass
 import com.github.richardwrq.krouter.api.interfaces.IInjector
 
 /**
- *
+ * 获取
  *
  * @author WuRuiQiang <a href="mailto:263454190@qq.com">Contact me.</a>
  * @version v1.0

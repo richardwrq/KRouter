@@ -40,25 +40,49 @@ object KRouter {
         Router.init(context)
     }
 
+    /**
+     * 创建一个Navigator 用以发起一个路由请求
+     * @param path 路由地址
+     * @return Navigator
+     */
     fun create(path: String): Navigator {
         return Navigator(path)
     }
 
+    /**
+     * 自定义匹配器规则 默认匹配规则直接判断两个字符串是否相同，你可以通过该函数自由添加匹配器
+     * @param block 一个带参数的lambda表达式 参数类型为MutableList<PathMatcher>，该列表存放有默认的匹配器
+     * @return KRouter
+     */
     fun handleMatcher(block: (MutableList<PathMatcher>) -> Unit): KRouter {
         block(RouteTable.matchers)
         return this
     }
 
+    /**
+     * 自定义添加路由表
+     * @param block 一个带参数的lambda表达式 参数类型为MutableMap<String, RouteMetadata>，该map中存有所有被注解的路由，删除后将会导致路由器寻址失败
+     * @return KRouter
+     */
     fun addRoutePath(block: (MutableMap<String, RouteMetadata>) -> Unit): KRouter {
         block(RouteTable.routes)
         return this
     }
 
+    /**
+     * 调用该函数后为对应对象中添加了[com.github.richardwrq.krouter.annotation.Inject]注解的字段从bundle中取出实例对该字段进行赋值,
+     * bundle中的key值对应[com.github.richardwrq.krouter.annotation.Inject]注解中的key值，如果注解中的key未设置，则使用字段的名称作为bundle中的key取出value
+     * @param instance
+     * @param bundle
+     */
     @JvmOverloads
     fun inject(instance: Any, bundle: Bundle? = null) {
         internalInject(instance, bundle)
     }
 
+    /**
+     * 开启日志
+     */
     @JvmStatic
     fun openDebug() {
         Logger.openDebug()
@@ -362,16 +386,21 @@ object KRouter {
         /**
          * @hide
          */
-        fun withUserHandle(userHandle: UserHandle): Navigator {
-            this.userHandle = userHandle
-            return this
-        }
+//        fun withUserHandle(userHandle: UserHandle): Navigator {
+//            this.userHandle = userHandle
+//            return this
+//        }
 
         /**
          * @hide
          */
-        fun withTimeout(timeout: Long): Navigator {
-            this.timeout = timeout
+//        fun withTimeout(timeout: Long): Navigator {
+//            this.timeout = timeout
+//            return this
+//        }
+
+        fun withOptions(options: Bundle?): Navigator {
+            this.options = options
             return this
         }
 

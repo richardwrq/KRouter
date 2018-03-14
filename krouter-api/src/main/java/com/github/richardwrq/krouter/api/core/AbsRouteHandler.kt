@@ -5,7 +5,7 @@ import com.github.richardwrq.krouter.annotation.model.RouteMetadata
 import com.github.richardwrq.krouter.api.exceptions.HandleException
 
 /**
- *
+ * 路由处理器抽象类
  *
  * @author Wuruiqiang <a href="mailto:263454190@qq.com">Contact me.</a>
  * @version v1.0

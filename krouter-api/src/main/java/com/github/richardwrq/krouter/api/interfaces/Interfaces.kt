@@ -64,20 +64,45 @@ interface IProvider {
 }
 
 /**
- * 路由器
+ * 路由规则匹配器
  *
  * @author: Wuruiqiang <a href="mailto:263454190@qq.com">Contact me.</a>
  * @version: v1.0
  * @since: 18/1/17 下午7:45
  */
 interface PathMatcher {
+    /**
+     *
+     * @param path route path
+     * @param path2 navigator path
+     * @return if true,means this path was match
+     */
     fun match(path: String, path2: String): Boolean
 }
 
+/**
+ * 注入器
+ *
+ * @author: Wuruiqiang <a href="mailto:263454190@qq.com">Contact me.</a>
+ * @version: v1.0
+ * @since: 18/3/8 00:33
+ */
 interface IInjector {
+    /**
+     *
+     * @param any 被注入的实例，如果该实例是Activity、Fragment的子类，则不需要传入bundle
+     * @param extras 从extras中取出需要被注入的字段的值
+     */
     fun inject(any: Any, extras: Bundle?)
 }
 
+/**
+ * 序列化对象Provider 提供对象序列化功能
+ *
+ * @author: Wuruiqiang <a href="mailto:263454190@qq.com">Contact me.</a>
+ * @version: v1.0
+ * @since: 18/3/8 00:33
+ */
 interface SerializationProvider: IProvider {
     fun <T> parseObject(text: String?, clazz: Type): T?
 

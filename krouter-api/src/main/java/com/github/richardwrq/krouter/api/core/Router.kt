@@ -11,7 +11,8 @@ import com.github.richardwrq.krouter.api.utils.Logger
 import java.util.*
 
 /**
- *
+ * 路由器
+ * 具体实现寻址、拦截器执行、获取Provider等逻辑
  *
  * @author Wuruiqiang <a href="mailto:263454190@qq.com">Contact me.</a>
  * @version v1.0
@@ -37,6 +38,9 @@ internal class Router private constructor() {
         }
     }
 
+    /**
+     * 加载路由表
+     */
     private fun loadRouteTable() {
         context.assets.list("").filter { it.startsWith("$PROJECT_NAME$SEPARATOR") }.forEach {
             val moduleName = transferModuleName(it)
@@ -57,6 +61,10 @@ internal class Router private constructor() {
         }
     }
 
+    /**
+     * 发起路由请求
+     * @return 若对应路由为fragment则返回，其余情况返回null
+     */
     fun route(navigator: KRouter.Navigator): Any? {
         val map = addressingComponent(navigator)
         if (map.isEmpty()) {
@@ -88,6 +96,10 @@ internal class Router private constructor() {
         return null
     }
 
+    /**
+     * 开始寻址，从路由表中获取对应路径的路由
+     * @return Map<String, RouteMetadata> key: 路由路径  value: 路由元数据
+     */
     private fun addressingComponent(navigator: KRouter.Navigator): Map<String, RouteMetadata> {
         Logger.d("Addressing >> ${navigator.path}")
         return RouteTable.routes.filterKeys {
@@ -97,10 +109,18 @@ internal class Router private constructor() {
         }
     }
 
+    /**
+     * 将Map<String, RouteMetadata>转化为List<AbsRouteHandler>并且按照优先级进行排序
+     * @return 返回路由处理者列表
+     */
     private fun createRouteHandler(map: Map<String, RouteMetadata>): List<AbsRouteHandler> {
         return map.map { createHandler(it.value) }.sortedWith(RoutePriorityComparator)
     }
 
+    /**
+     * 执行拦截器
+     * @return true:路由请求被拦截 false:该请求未被拦截
+     */
     private fun isIntercept(navigator: KRouter.Navigator): Boolean {
         return RouteTable.interceptors.asSequence().find {
             try {
@@ -117,6 +137,9 @@ internal class Router private constructor() {
         } != null
     }
 
+    /**
+     * 该方法直接从路由表中获取provider，若provider实现了IProvider接口，则init方法将被调用
+     */
     fun route(path: String): Any? {
         val clazz = RouteTable.providers[path] ?: return null
         val instance = clazz.newInstance()

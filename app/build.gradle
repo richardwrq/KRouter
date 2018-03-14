@@ -39,6 +39,7 @@ android {
             assets.srcDirs = ['src/release/assets']
         }
     }
+
 }
 
 dependencies {

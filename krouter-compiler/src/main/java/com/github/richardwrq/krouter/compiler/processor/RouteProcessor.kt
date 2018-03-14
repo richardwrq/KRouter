@@ -413,9 +413,12 @@ class InjectProcessor : BaseProcessor() {
                 } else {
                     //获取Java-》kotlin映射类型，如 java.lang.String转化为kotlin.String，如无需映射则直接返回element类型即可
                     val className = element.javaToKotlinType() ?: element.asType().asTypeName()
-                    exInjectFun.addStatement("${element.simpleName} = bundle.get(%S) as? %T ?: parseObject(bundle.getString(%S), object : %T() {}.getType())${element.asNonNullable()}",
+                    exInjectFun.addStatement("${element.simpleName} = bundle.get(%S) as? %T ?: %T.getProvider<%T>(%S) ?: parseObject(bundle.getString(%S), object : %T() {}.getType())${element.asNonNullable()}",
                             key,
                             className,
+                            tmKRouter.asTypeName(),
+                            className,
+                            key,
                             key,
                             ParameterizedTypeName.get(ClassName.bestGuess(TYPE_TOKEN), className))
                 }
