@@ -11,7 +11,7 @@ krouter-gradle-plugin|krouter-api|krouter-compiler|krouter-annotation
 
 
 
-#### 支持功能
+支持功能
 --------
 - 支持启动Activity、Service以及获取Fragment
 - 添加拦截器、按优先级依次调用拦截，优先级为整形数，数值越大优先级越低
@@ -20,7 +20,7 @@ krouter-gradle-plugin|krouter-api|krouter-compiler|krouter-annotation
 - 支持InstantRun、MultiDex
 - 支持依赖注入
 
-#### Download
+Download
 --------
 在项目根目录``build.gradle``文件中加入如下配置
 
@@ -46,7 +46,7 @@ apply plugin: 'kotlin-kapt'
 apply plugin: "com.github.richardwrq.krouter"
 ```
 
-#### 功能介绍
+功能介绍
 --------
 1. 添加``@Route``注解
 ```
@@ -108,7 +108,7 @@ start方式
 ```
 KRouter.INSTANCE.create("krouter/sample/MyService").request();
 ```
-#### Proguard
+Proguard
 --------
 ```
 -keep class com.github.richardwrq.krouter.** {*;}
@@ -117,7 +117,7 @@ KRouter.INSTANCE.create("krouter/sample/MyService").request();
 -keep class com.github.richardwrq.krouter.fragment.Fragment1
 ```
 
-#### 更多功能
+更多功能
 --------
 1. 声明拦截器
 ```
