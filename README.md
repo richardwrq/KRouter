@@ -47,7 +47,7 @@ apply plugin: "com.github.richardwrq.krouter"
 
 #### 功能介绍
 
-1. 添加**@Route**注解
+1. 添加``@Route``注解
 ```
 //目前@Route支持的组件为Activity、Service、Fragment
 @Route(path = "krouter/sample/Main2Activity")
