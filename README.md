@@ -1,4 +1,5 @@
 ## KRouter
+[简介](https://www.jianshu.com/p/ee5ee758786c)
 ```使用Kotlin打造的Android平台路由框架，实现了主流路由框架的大部分功能，支持依赖注入```
 
 ##### [![Join the chat at https://gitter.im/richardwrq/KRouter](https://badges.gitter.im/richardwrq/KRouter.svg)](https://gitter.im/richardwrq/KRouter?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
