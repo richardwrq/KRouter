@@ -19,3 +19,7 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+-keep class com.github.richardwrq.krouter.** {*;}
+-keep class * implements com.github.richardwrq.krouter.api.interfaces.IInjector {*;}
+-keep class com.github.richardwrq.krouter.fragment.Fragment1
+-keep class com.github.richardwrq.module.java.Fragment2

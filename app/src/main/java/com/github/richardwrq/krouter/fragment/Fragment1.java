@@ -24,15 +24,15 @@ import com.github.richardwrq.krouter.api.core.KRouter;
 @Route(path = RouterTable.FGM1_PATH)
 public class Fragment1 extends Fragment {
 
-    @Inject
-    String test;
+    @Inject(name = "test")
+    String content;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_1, container, false);
         KRouter.INSTANCE.inject(this);
-        ((TextView) view.findViewById(R.id.tv)).setText(test);
+        ((TextView) view.findViewById(R.id.tv)).setText(content);
         view.findViewById(R.id.btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

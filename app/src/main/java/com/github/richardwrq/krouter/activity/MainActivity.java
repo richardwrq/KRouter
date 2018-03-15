@@ -71,21 +71,21 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .subscribeArrived(new Function2<KRouter.Navigator, String, Unit>() {
                     @Override
-                    public Unit invoke(KRouter.Navigator navigator, String s) {
+                    public Unit invoke(KRouter.Navigator navigator, String s) {//执行跳转后回调
                         Toast.makeText(MainActivity.this, "subscribeArrived : " + s, Toast.LENGTH_SHORT).show();
                         return null;
                     }
                 })
                 .subscribeBefore(new Function2<KRouter.Navigator, String, Unit>() {
                     @Override
-                    public Unit invoke(KRouter.Navigator navigator, String s) {
+                    public Unit invoke(KRouter.Navigator navigator, String s) {//执行跳转前回调
                         Toast.makeText(MainActivity.this, "subscribeBefore : " + s, Toast.LENGTH_SHORT).show();
                         return null;
                     }
                 })
                 .subscribeRouteIntercept(new Function2<KRouter.Navigator, String, Unit>() {
                     @Override
-                    public Unit invoke(KRouter.Navigator navigator, String s) {
+                    public Unit invoke(KRouter.Navigator navigator, String s) {//路由请求被拦截时回调
                         Toast.makeText(MainActivity.this, "subscribeRouteIntercept : " + s, Toast.LENGTH_SHORT).show();
                         return null;
                     }

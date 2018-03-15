@@ -1,4 +1,4 @@
-package com.github.richardwrq.krouter.fragment;
+package com.github.richardwrq.module.java;
 
 import android.app.Fragment;
 import android.os.Bundle;
@@ -9,11 +9,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.github.richardwrq.krouter.R;
 import com.github.richardwrq.common.RouterTable;
 import com.github.richardwrq.krouter.annotation.Inject;
 import com.github.richardwrq.krouter.annotation.Route;
 import com.github.richardwrq.krouter.api.core.KRouter;
+
+import org.rc.wrq.module.java.R;
 
 /**
  * @author WuRuiQiang <a href="mailto:263454190@qq.com">Contact me.</a>
