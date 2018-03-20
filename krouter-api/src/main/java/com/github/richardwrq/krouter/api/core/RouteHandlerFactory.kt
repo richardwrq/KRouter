@@ -106,8 +106,8 @@ internal class ActivityHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(r
                     Logger.d("startActivity >> ${routeMetadata.clazz.simpleName}")
                     ActivityCompat.startActivity(context, intent, navigator.options)
                 }
-                if ((navigator.enterAnim > 0 || navigator.exitAnim > 0) && context is Activity) {
-                    context.overridePendingTransition(navigator.enterAnim, navigator.exitAnim)
+                if (navigator.enterAnim > 0 || navigator.exitAnim > 0) {
+                    navigator.activity?.overridePendingTransition(navigator.enterAnim, navigator.exitAnim)
                 }
                 navigator.routeArrivedCallback?.invoke(navigator, routeMetadata.clazz.name)
             } catch (e: ActivityNotFoundException) {

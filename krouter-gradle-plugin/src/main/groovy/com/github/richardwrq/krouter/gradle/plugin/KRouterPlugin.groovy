@@ -28,10 +28,10 @@ class KRouterPlugin implements Plugin<Project> {
             project.configurations.all { configuration ->
                 def name = configuration.name
                 if (name == "implementation" || name == "compile") {
-                    System.out.printf("Add krouter-api dependency")
+                    System.out.println("Add krouter-api dependency")
                     configuration.dependencies.add(project.dependencies.create(Const.KROUTER_API))
                 } else if (name == "kapt") {
-                    System.out.printf("Add krouter-compiler dependency")
+                    System.out.println("Add krouter-compiler dependency")
                     configuration.dependencies.add(project.dependencies.create(Const.KROUTER_COMPILER))
                 }
             }

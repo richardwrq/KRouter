@@ -23,6 +23,19 @@
 		<activity android:name=".activity.Main3Activity">
 		</activity>
 
+		<activity android:name="com.github.richardwrq.krouter.api.activity.SchemeFilterActivity">
+			<intent-filter>
+				<!-- 配置Scheme -->
+				<data
+					android:host="wrq.richard.com"
+					android:scheme="krouter"/>
+
+				<action android:name="android.intent.action.VIEW"/>
+
+				<category android:name="android.intent.category.DEFAULT"/>
+				<category android:name="android.intent.category.BROWSABLE"/>
+			</intent-filter>
+		</activity>
 	</application>
 
 </manifest>

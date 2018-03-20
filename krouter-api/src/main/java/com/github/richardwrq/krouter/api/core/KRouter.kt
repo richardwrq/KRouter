@@ -50,6 +50,15 @@ object KRouter {
     }
 
     /**
+     * 创建一个Navigator 用以发起一个路由请求
+     * @param uri 路由地址
+     * @return Navigator
+     */
+    fun create(uri: Uri): Navigator {
+        return Navigator(uri)
+    }
+
+    /**
      * 自定义匹配器规则 默认匹配规则直接判断两个字符串是否相同，你可以通过该函数自由添加匹配器
      * @param block 一个带参数的lambda表达式 参数类型为MutableList<PathMatcher>，该列表存放有默认的匹配器
      * @return KRouter
@@ -144,10 +153,9 @@ object KRouter {
     @Retention(AnnotationRetention.SOURCE)
     annotation class BindServiceFlags
 
-    class Navigator internal constructor(
-            _path: String = "") {
+    class Navigator {
 
-        val path: String = Uri.parse(_path).path
+        val path: String
         val extras = Bundle()
         var enterAnim = -1
             private set
@@ -181,11 +189,19 @@ object KRouter {
             private set
         var options: Bundle? = null
 
-        init {
-            val uri = Uri.parse(_path)
+        internal constructor(uri: Uri) {
+            path = uri.path
             uri.queryParameterNames.forEach {
                 extras.putString(it, uri.getQueryParameter(it))
             }
+        }
+
+        internal constructor(path: String) {
+            val uri = Uri.parse(path)
+            uri.queryParameterNames.forEach {
+                extras.putString(it, uri.getQueryParameter(it))
+            }
+            this.path = path
         }
 
         fun withInt(key: String?, int: Int): Navigator {
@@ -367,7 +383,8 @@ object KRouter {
          * @param enterAnim enter animation
          * @param exitAnim exit animation
          */
-        fun withTransition(enterAnim: Int, exitAnim: Int): Navigator {
+        fun withTransition(activity: Activity, enterAnim: Int, exitAnim: Int): Navigator {
+            this.activity = activity
             this.enterAnim = enterAnim
             this.exitAnim = exitAnim
             return this

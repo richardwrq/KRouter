@@ -39,6 +39,19 @@
 			android:layout_height="wrap_content"
 			android:onClick="startActivityForResult"
 			android:text="startActivityForResult"/>
+
+		<EditText
+			android:id="@+id/etURL"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:singleLine="true"
+			android:textColor="@android:color/holo_blue_light"/>
+
+		<Button
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="openAtyWithURL"
+			android:onClick="openAtyWithURL"/>
 	</LinearLayout>
 
 </ScrollView>

@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
@@ -13,6 +14,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.github.richardwrq.krouter.R;
@@ -32,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     @Inject
     String test;
 
-    MyProvider mProvider;
+    EditText editText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,12 +45,15 @@ public class MainActivity extends AppCompatActivity {
         getIntent().putExtras(bundle);
         KRouter.INSTANCE.inject(this);
         Toast.makeText(this, test, Toast.LENGTH_SHORT).show();
+
+        editText = findViewById(R.id.etURL);
+        editText.setText("krouter://wrq.richard.com" + RouterTable.MAIN3_ATY_PATH);
     }
 
     public void openMain2(View view) {
         KRouter.INSTANCE.create(RouterTable.MAIN2_ATY_PATH)
                 .withObject("person", new Person())
-//                .withTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
+                .withTransition(this, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
                 .withFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 .request();
     }
@@ -145,6 +150,16 @@ public class MainActivity extends AppCompatActivity {
         KRouter.INSTANCE.create(RouterTable.RESULT_ATY_PATH)
                 .withRequestCode(this, 2)
                 .request();
+    }
+
+    public void openAtyWithURL(View view) {
+        String uriText = editText.getText().toString();
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_VIEW);
+        Uri uri = Uri.parse(uriText);
+        Log.d("MainActivity", "openAtyWithURL: " + uri);
+        intent.setData(uri);
+        startActivity(intent);
     }
 
     @Override

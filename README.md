@@ -271,6 +271,23 @@ class Main2Activity : AppCompatActivity() {
     }
 }
 ```
+5. URL跳转
+在AndroidManifest.xml加入如下配置
+```
+<activity android:name="com.github.richardwrq.krouter.api.activity.SchemeFilterActivity">
+			<intent-filter>
+				<!-- 配置Scheme -->
+				<data
+					android:host="wrq.richard.com"
+					android:scheme="krouter"/>
+
+				<action android:name="android.intent.action.VIEW"/>
+
+				<category android:name="android.intent.category.DEFAULT"/>
+				<category android:name="android.intent.category.BROWSABLE"/>
+			</intent-filter>
+		</activity>
+```
 
 License
 -------
