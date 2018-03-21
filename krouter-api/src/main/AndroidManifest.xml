@@ -1,2 +1,2 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-		  package="org.rc.wrq.krouter.api"/>
+		  package="com.github.richardwrq.krouter.api"/>
