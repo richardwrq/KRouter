@@ -35,7 +35,7 @@ buildscript {
                jcenter()
        }
        dependencies {
-           classpath "com.github.richardwrq:krouter-gradle-plugin:0.1.1"
+           classpath "com.github.richardwrq:krouter-gradle-plugin:x.y.z"
            classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
        }
    }

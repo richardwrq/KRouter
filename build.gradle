@@ -53,7 +53,7 @@ buildscript {
             junit     : 'junit:junit:4.12',
             gson      : 'com.google.code.gson:gson:2.8.2',
             krouter   : [
-                    'api': 'com.github.richardwrq:krouter-api:0.1.1',
+                    'api': 'com.github.richardwrq:krouter-api:0.1.2',
                     'compiler': 'com.github.richardwrq:krouter-compiler:0.1.1',
                     'annotation': 'com.github.richardwrq:krouter-annotation:0.1.1'
             ]
@@ -65,7 +65,7 @@ buildscript {
     dependencies {
         classpath deps.android.gradlePlugin
         classpath "com.gradle.publish:plugin-publish-plugin:0.9.10"
-        classpath "com.github.richardwrq:krouter-gradle-plugin:0.1.1"
+        classpath "com.github.richardwrq:krouter-gradle-plugin:0.1.2"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
         classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:${versions.bintray}"
         classpath "com.github.dcendents:android-maven-gradle-plugin:${versions.mavenPlugin}"
