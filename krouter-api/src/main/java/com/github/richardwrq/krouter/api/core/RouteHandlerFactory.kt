@@ -73,38 +73,41 @@ internal class ActivityHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(r
                 .putExtras(navigator.extras)
         Handler(Looper.getMainLooper()).post {
             try {
-                if (navigator.requestCode > 0) {
-                    Logger.d("startActivityForResult >> ${routeMetadata.clazz.simpleName}")
-                    when {
-                        navigator.activity != null -> {
-                            navigator.activity!!.startActivityForResult(
-                                    intent,
-                                    navigator.requestCode,
-                                    navigator.options)
-                        }
-                        navigator.fragment != null -> {
-                            navigator.fragment?.startActivityForResult(
-                                    intent,
-                                    navigator.requestCode,
-                                    navigator.options)
-                        }
-                        navigator.fragmentV4 != null -> {
-                            navigator.fragmentV4?.startActivityForResult(
-                                    intent,
-                                    navigator.requestCode,
-                                    navigator.options)
-                        }
-                        else -> {
-                            ActivityCompat.startActivityForResult(
-                                    navigator.activity!!,
-                                    intent,
-                                    navigator.requestCode,
-                                    navigator.options)
-                        }
+                when {
+                    navigator.activity != null -> {
+                        Logger.d("startActivityForResult >> ${routeMetadata.clazz.simpleName}")
+                        navigator.activity!!.startActivityForResult(
+                                intent,
+                                navigator.requestCode,
+                                navigator.options)
                     }
-                } else {
-                    Logger.d("startActivity >> ${routeMetadata.clazz.simpleName}")
-                    ActivityCompat.startActivity(context, intent, navigator.options)
+                    navigator.fragment != null -> {
+                        Logger.d("startActivityForResult >> ${routeMetadata.clazz.simpleName}")
+                        navigator.fragment?.startActivityForResult(
+                                intent,
+                                navigator.requestCode,
+                                navigator.options)
+                    }
+                    navigator.fragmentV4 != null -> {
+                        Logger.d("startActivityForResult >> ${routeMetadata.clazz.simpleName}")
+                        navigator.fragmentV4?.startActivityForResult(
+                                intent,
+                                navigator.requestCode,
+                                navigator.options)
+                    }
+                    navigator.context is Activity -> {
+                        Logger.d("startActivity >> ${routeMetadata.clazz.simpleName}")
+                        (navigator.context as Activity).startActivityForResult(
+                                intent,
+                                navigator.requestCode,
+                                navigator.options)
+                    }
+                    else -> {
+                        Logger.d("startActivity >> ${routeMetadata.clazz.simpleName}")
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        val tmpContext = navigator.context ?: context
+                        ActivityCompat.startActivity(tmpContext, intent, navigator.options)
+                    }
                 }
                 if (navigator.enterAnim > 0 || navigator.exitAnim > 0) {
                     navigator.activity?.overridePendingTransition(navigator.enterAnim, navigator.exitAnim)

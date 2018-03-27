@@ -188,6 +188,9 @@ object KRouter {
         var fragmentV4: android.support.v4.app.Fragment? = null
             private set
         var options: Bundle? = null
+            private set
+        var context: Context? = null
+            private set
 
         internal constructor(uri: Uri) {
             path = uri.path
@@ -489,7 +492,22 @@ object KRouter {
             return this
         }
 
-        fun request(): Any? = Router.getInstance().route(this)
+        /**
+         * Initiate a routing request to the router.
+         * use application context
+         */
+        fun request(): Any? {
+            return Router.getInstance().route(this)
+        }
+
+        /**
+         * Initiate a routing request to the router. use context
+         * @param context
+         */
+        fun request(context: Context): Any? {
+            this.context = context
+            return Router.getInstance().route(this)
+        }
     }
 
 }
