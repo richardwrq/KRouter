@@ -14,7 +14,7 @@ class KRouterPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
 
-        project.extensions.add("krouter", KRouterExtension)
+        project.extensions.create("krouter", KRouterExtension)
 
         def kaptExtension = project.extensions.getByName('kapt')
         def androidExtension = project.extensions.getByName("android")
@@ -24,21 +24,19 @@ class KRouterPlugin implements Plugin<Project> {
             }
         }
 
-        KRouterExtension kRouterExtension = project["krouter"]
-        if (kRouterExtension.autoAddDependency) {
-            project.configurations.all { configuration ->
-                def name = configuration.name
-                if (name == "implementation" || name == "compile") {
-                    System.out.println("Add krouter-api dependency")
-                    configuration.dependencies.add(project.dependencies.create(Const.KROUTER_API))
-                } else if (name == "kapt") {
-                    System.out.println("Add krouter-compiler dependency")
-                    configuration.dependencies.add(project.dependencies.create(Const.KROUTER_COMPILER))
+        project.afterEvaluate {
+            if (project.krouter.autoAddDependency) {
+                project.configurations.all { configuration ->
+                    def name = configuration.name
+                    if (name == "implementation" || name == "compile") {
+                        System.out.println("Add krouter-api dependency")
+                        configuration.dependencies.add(project.dependencies.create(Const.KROUTER_API))
+                    } else if (name == "kapt") {
+                        System.out.println("Add krouter-compiler dependency")
+                        configuration.dependencies.add(project.dependencies.create(Const.KROUTER_COMPILER))
+                    }
                 }
             }
-        }
-
-        project.afterEvaluate {
             if (!project.plugins.hasPlugin(AndroidBasePlugin.class)) {
                 return
             }
