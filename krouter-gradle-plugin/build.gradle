@@ -13,41 +13,4 @@ dependencies {
 sourceCompatibility = "1.7"
 targetCompatibility = "1.7"
 
-apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"
-
-//apply plugin: "com.gradle.plugin-publish"
-//
-//Properties properties = new Properties()
-//properties.load(project.file('local.properties').newDataInputStream())
-//properties.load(project.rootProject.file('local.properties').newDataInputStream())
-//ext {
-//    versionName = properties.getProperty("version")
-//    groupId = properties.getProperty("group")
-//    gitUrl = properties.getProperty("git.url")
-//    siteUrl = properties.getProperty("site.url")
-//    desc = properties.getProperty("desc")
-//    name = properties.getProperty("name")
-//}
-//
-//group = groupId
-//version = versionName
-//
-//pluginBundle {
-//    website = siteUrl
-//    vcsUrl = gitUrl
-//    description = desc
-//    tags = ['KRouter']
-//
-//    plugins {
-//        krouterPlugin {
-//            id = 'com.github.richardwrq.krouter'
-//            displayName = 'krouter-plugin'
-//        }
-//    }
-//
-//    mavenCoordinates {
-//        groupId = groupId
-//        artifactId = name
-//        version = versionName
-//    }
-//}
+//apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"
