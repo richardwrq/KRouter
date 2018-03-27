@@ -6,5 +6,5 @@ package com.github.richardwrq.krouter.gradle.plugin;
  * @since 18/3/6 下午2:55
  */
 public class KRouterExtension {
-    boolean autoAddDependency = true;
+    public boolean autoAddDependency = true;
 }

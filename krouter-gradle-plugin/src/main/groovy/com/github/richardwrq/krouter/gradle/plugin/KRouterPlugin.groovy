@@ -14,7 +14,7 @@ class KRouterPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
 
-        project.extensions.create("krouter", KRouterExtension)
+        project.extensions.add("krouter", KRouterExtension)
 
         def kaptExtension = project.extensions.getByName('kapt')
         def androidExtension = project.extensions.getByName("android")
@@ -24,7 +24,8 @@ class KRouterPlugin implements Plugin<Project> {
             }
         }
 
-        if (project["krouter"].autoAddDependency) {
+        KRouterExtension kRouterExtension = project["krouter"]
+        if (kRouterExtension.autoAddDependency) {
             project.configurations.all { configuration ->
                 def name = configuration.name
                 if (name == "implementation" || name == "compile") {
