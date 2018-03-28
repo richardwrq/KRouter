@@ -24,6 +24,16 @@ class KRouterPlugin implements Plugin<Project> {
             }
         }
 
+        if (project.krouter.autoAddDependency) {
+            project.configurations.all { configuration ->
+                def name = configuration.name
+                if (name == "kapt") {
+                    System.out.println("Add krouter-compiler dependency")
+                    configuration.dependencies.add(project.dependencies.create(Const.KROUTER_COMPILER))
+                }
+            }
+        }
+
         project.afterEvaluate {
             if (project.krouter.autoAddDependency) {
                 project.configurations.all { configuration ->
@@ -31,9 +41,6 @@ class KRouterPlugin implements Plugin<Project> {
                     if (name == "implementation" || name == "compile") {
                         System.out.println("Add krouter-api dependency")
                         configuration.dependencies.add(project.dependencies.create(Const.KROUTER_API))
-                    } else if (name == "kapt") {
-                        System.out.println("Add krouter-compiler dependency")
-                        configuration.dependencies.add(project.dependencies.create(Const.KROUTER_COMPILER))
                     }
                 }
             }
