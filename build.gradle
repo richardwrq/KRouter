@@ -16,9 +16,9 @@ buildscript {
             'compileSdk'    : 27,
 
             'supportLibrary': '27.0.2',
-            'androidPlugin' : '3.0.1',
+            'androidPlugin' : '3.1.0',
             'androidTools'  : '27.0.2',
-            'kotlin'        : '1.2.21',
+            'kotlin'        : '1.2.30',
             'bintray'       : '1.7.3',
             'dokka'         : '0.9.16',
             'mavenPlugin'   : '2.0'
