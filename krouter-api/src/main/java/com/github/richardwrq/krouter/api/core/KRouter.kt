@@ -10,13 +10,14 @@ import android.content.ServiceConnection
 import android.net.Uri
 import android.os.*
 import android.support.annotation.IntDef
-import android.support.v4.app.ActivityOptionsCompat
 import android.util.Size
 import android.util.SizeF
 import android.util.SparseArray
+import com.github.richardwrq.krouter.annotation.PROJECT_NAME
+import com.github.richardwrq.krouter.annotation.SEPARATOR
 import com.github.richardwrq.krouter.annotation.model.RouteMetadata
+import com.github.richardwrq.krouter.annotation.transferModuleName
 import com.github.richardwrq.krouter.api.data.RouteTable
-import com.github.richardwrq.krouter.api.interfaces.IProvider
 import com.github.richardwrq.krouter.api.interfaces.PathMatcher
 import com.github.richardwrq.krouter.api.interfaces.SerializationProvider
 import com.github.richardwrq.krouter.api.utils.Logger
@@ -95,6 +96,15 @@ object KRouter {
     @JvmStatic
     fun openDebug() {
         Logger.openDebug()
+    }
+
+    /**
+     * 获取当前项目所有module
+     * @param context context
+     * @return module名称列表
+     */
+    fun listAllModules(context: Context): List<String> {
+        return context.assets.list("").filter { it.startsWith("$PROJECT_NAME$SEPARATOR") }.map { transferModuleName(it) }
     }
 
     /**
