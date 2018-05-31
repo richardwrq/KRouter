@@ -25,23 +25,31 @@ class KRouterPlugin implements Plugin<Project> {
         }
 
         if (project.krouter.autoAddDependency) {
-            project.configurations.all { configuration ->
-                def name = configuration.name
-                if (name == "kapt") {
-                    System.out.println("Add krouter-compiler dependency")
-                    configuration.dependencies.add(project.dependencies.create(Const.KROUTER_COMPILER))
-                }
+//            project.configurations.all { configuration ->
+//                def name = configuration.name
+//                if (name == "kapt") {
+//                    System.out.println("Add krouter-compiler dependency")
+//                    configuration.dependencies.add(project.dependencies.create(Const.KROUTER_COMPILER))
+//                }
+//            }
+            project.dependencies {
+                System.out.println("Add krouter-compiler dependency")
+                kapt Const.KROUTER_COMPILER
             }
         }
 
         project.afterEvaluate {
             if (project.krouter.autoAddDependency) {
-                project.configurations.all { configuration ->
-                    def name = configuration.name
-                    if (name == "implementation" || name == "compile") {
-                        System.out.println("Add krouter-api dependency")
-                        configuration.dependencies.add(project.dependencies.create(Const.KROUTER_API))
-                    }
+//                project.configurations.all { configuration ->
+//                    def name = configuration.name
+//                    if (name == "implementation" || name == "compile") {
+//                        System.out.println("Add krouter-api dependency")
+//                        configuration.dependencies.add(project.dependencies.create(Const.KROUTER_API))
+//                    }
+//                }
+                project.dependencies {
+                    System.out.println("Add krouter-api dependency")
+                    implementation Const.KROUTER_API
                 }
             }
             if (!project.plugins.hasPlugin(AndroidBasePlugin.class)) {

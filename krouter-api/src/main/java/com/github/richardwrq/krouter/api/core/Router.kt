@@ -47,9 +47,13 @@ internal class Router private constructor() {
             if (moduleName.isBlank()) {
                 return@forEach
             }
-            (loadClassForName("$PACKAGE$INTERCEPTOR_LOADER_NAME$SEPARATOR$moduleName")?.newInstance() as? IInterceptorLoader)?.loadInto(RouteTable.interceptors)
-            (loadClassForName("$PACKAGE$PROVIDER_LOADER_NAME$SEPARATOR$moduleName")?.newInstance() as? IProviderLoader)?.loadInto(RouteTable.providers)
-            (loadClassForName("$PACKAGE$ROUTE_LOADER_NAME$SEPARATOR$moduleName")?.newInstance() as? IRouteLoader)?.loadInto(RouteTable.routes)
+            val interceptorLoader = "$PACKAGE$INTERCEPTOR_LOADER_NAME$SEPARATOR$moduleName"
+            val providerLoader = "$PACKAGE$PROVIDER_LOADER_NAME$SEPARATOR$moduleName"
+            val routeLoader = "$PACKAGE$ROUTE_LOADER_NAME$SEPARATOR$moduleName"
+            Logger.i("load interceptorLoader: $interceptorLoader, providerLoader: $providerLoader, routeLoader: $routeLoader")
+            (loadClassForName(interceptorLoader)?.newInstance() as? IInterceptorLoader)?.loadInto(RouteTable.interceptors)
+            (loadClassForName(providerLoader)?.newInstance() as? IProviderLoader)?.loadInto(RouteTable.providers)
+            (loadClassForName(routeLoader)?.newInstance() as? IRouteLoader)?.loadInto(RouteTable.routes)
         }
     }
 

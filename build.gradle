@@ -20,7 +20,7 @@ buildscript {
             'androidTools'  : '27.0.2',
             'kotlin'        : '1.2.30',
             'bintray'       : '1.7.3',
-            'dokka'         : '0.9.16',
+            'dokka'         : '0.9.17',
             'mavenPlugin'   : '2.0'
     ]
 
@@ -55,7 +55,7 @@ buildscript {
             krouter   : [
                     'api': 'com.github.richardwrq:krouter-api:0.1.3',
                     'compiler': 'com.github.richardwrq:krouter-compiler:0.1.1',
-                    'annotation': 'com.github.richardwrq:krouter-annotation:0.1.1'
+                    'annotation': 'com.github.richardwrq:krouter-annotation:0.1.2'
             ]
     ]
     repositories {

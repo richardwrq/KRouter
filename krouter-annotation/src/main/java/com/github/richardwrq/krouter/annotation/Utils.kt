@@ -25,7 +25,7 @@ internal const val INJECTOR_SUFFIX = "$SEPARATOR$PROJECT_NAME${SEPARATOR}Injecto
  * @return 返回Module名称 过滤除数字以及字母以外的字符
  */
 fun transferModuleName(fileName: String): String {
-    return fileName.substring(fileName.lastIndexOf(SEPARATOR) + 1, fileName.length).replace("[^0-9a-zA-Z_]+".toRegex(), "")
+    return fileName.replace(PROJECT_NAME + SEPARATOR, "").replace("[^0-9a-zA-Z_]+".toRegex(), "")
 }
 
 /**
