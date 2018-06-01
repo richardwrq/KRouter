@@ -65,7 +65,7 @@ buildscript {
     dependencies {
         classpath deps.android.gradlePlugin
         classpath "com.gradle.publish:plugin-publish-plugin:0.9.10"
-        classpath "com.github.richardwrq:krouter-gradle-plugin:0.1.5"
+        classpath "com.github.richardwrq:krouter-gradle-plugin:0.1.6"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
         classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:${versions.bintray}"
         classpath "com.github.dcendents:android-maven-gradle-plugin:${versions.mavenPlugin}"

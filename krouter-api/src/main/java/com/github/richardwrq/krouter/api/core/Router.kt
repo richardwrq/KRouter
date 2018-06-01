@@ -1,5 +1,6 @@
 package com.github.richardwrq.krouter.api.core
 
+import android.app.Application
 import android.app.Fragment
 import android.content.Context
 import com.github.richardwrq.krouter.annotation.*
@@ -33,7 +34,7 @@ internal class Router private constructor() {
         fun getInstance() = Inner.instance
 
         fun init(context: Context) {
-            getInstance().context = context.applicationContext
+            getInstance().context = context as? Application ?: context.applicationContext
             getInstance().loadRouteTable()
         }
     }
@@ -145,7 +146,11 @@ internal class Router private constructor() {
      * 该方法直接从路由表中获取provider，若provider实现了IProvider接口，则init方法将被调用
      */
     fun route(path: String): Any? {
-        val clazz = RouteTable.providers[path] ?: return null
+        val clazz = RouteTable.providers[path]
+        if (clazz == null) {
+            Logger.w("$path not found")
+            return null
+        }
         val instance = clazz.newInstance()
         if (instance is IProvider) {
             instance.init(context)
