@@ -18,7 +18,7 @@ buildscript {
             'supportLibrary': '27.0.2',
             'androidPlugin' : '3.1.0',
             'androidTools'  : '27.0.2',
-            'kotlin'        : '1.2.30',
+            'kotlin'        : '1.2.40',
             'bintray'       : '1.7.3',
             'dokka'         : '0.9.17',
             'mavenPlugin'   : '2.0'
@@ -43,7 +43,7 @@ buildscript {
                     fragment  : "com.android.support:support-fragment:${versions.supportLibrary}"
             ],
             kotlin    : [
-                    'stdLibJre8': "org.jetbrains.kotlin:kotlin-stdlib-jre8:${versions.kotlin}",
+                    'stdLibJre8': "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${versions.kotlin}",
                     'reflect'   : "org.jetbrains.kotlin:kotlin-reflect:${versions.kotlin}"
             ],
             auto      : [
@@ -53,9 +53,9 @@ buildscript {
             junit     : 'junit:junit:4.12',
             gson      : 'com.google.code.gson:gson:2.8.2',
             krouter   : [
-                    'api': 'com.github.richardwrq:krouter-api:0.1.3',
-                    'compiler': 'com.github.richardwrq:krouter-compiler:0.1.1',
-                    'annotation': 'com.github.richardwrq:krouter-annotation:0.1.2'
+                    'api': 'com.github.richardwrq:krouter-api:0.1.7',
+                    'compiler': 'com.github.richardwrq:krouter-compiler:0.1.3',
+                    'annotation': 'com.github.richardwrq:krouter-annotation:0.1.3'
             ]
     ]
     repositories {
@@ -65,7 +65,7 @@ buildscript {
     dependencies {
         classpath deps.android.gradlePlugin
         classpath "com.gradle.publish:plugin-publish-plugin:0.9.10"
-        classpath "com.github.richardwrq:krouter-gradle-plugin:0.1.6"
+        classpath "com.github.richardwrq:krouter-gradle-plugin:0.1.7"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
         classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:${versions.bintray}"
         classpath "com.github.dcendents:android-maven-gradle-plugin:${versions.mavenPlugin}"
