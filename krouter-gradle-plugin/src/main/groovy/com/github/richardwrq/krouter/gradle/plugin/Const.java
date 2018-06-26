@@ -7,5 +7,5 @@ package com.github.richardwrq.krouter.gradle.plugin;
  */
 public class Const {
     public static String KROUTER_API = "com.github.richardwrq:krouter-api:0.1.7";
-    public static String KROUTER_COMPILER = "com.github.richardwrq:krouter-compiler:0.1.3";
+    public static String KROUTER_COMPILER = "com.github.richardwrq:krouter-compiler:0.1.4";
 }

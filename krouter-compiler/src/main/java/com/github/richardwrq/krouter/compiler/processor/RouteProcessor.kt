@@ -488,12 +488,25 @@ class InjectProcessor : BaseProcessor() {
     /**
      * 获取需要把java类型映射成kotlin类型的ClassName  如：java.lang.String 在kotlin中的类型为kotlin.String 如果是空则表示该类型无需进行映射
      */
-    private fun Element.javaToKotlinType(): ClassName? {
-        val className = JavaToKotlinClassMap.INSTANCE.mapJavaToKotlin(FqName(this.asType().asTypeName().toString()))?.asSingleFqName()?.asString()
-        return if (className == null) {
-            null
+    private fun Element.javaToKotlinType(): TypeName =
+            asType().asTypeName().javaToKotlinType()
+
+    private fun TypeName.javaToKotlinType(): TypeName {
+        return if (this is ParameterizedTypeName) {
+            ParameterizedTypeName.get(
+                    rawType.javaToKotlinType() as ClassName,
+                    *typeArguments.map { it.javaToKotlinType() }.toTypedArray()
+            )
         } else {
-            ClassName.bestGuess(className)
+            val className =
+                    JavaToKotlinClassMap.INSTANCE.mapJavaToKotlin(FqName(toString()))
+                            ?.asSingleFqName()?.asString()
+
+            return if (className == null) {
+                this
+            } else {
+                ClassName.bestGuess(className)
+            }
         }
     }
 
