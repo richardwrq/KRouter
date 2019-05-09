@@ -48,8 +48,9 @@ class KRouterPlugin implements Plugin<Project> {
 //                    }
 //                }
                 project.dependencies {
-                    System.out.println("Add krouter-api dependency")
+                    System.out.println("Add krouter-api、krouter-annotation dependency")
                     implementation Const.KROUTER_API
+                    implementation Const.KROUTER_ANNOTATION
                 }
             }
             if (!project.plugins.hasPlugin(AndroidBasePlugin.class)) {
