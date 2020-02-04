@@ -14,5 +14,5 @@ enum class RouteType(val className: String) {
     CONTENT_PROVIDER("android.content.ContentProvider"),
     BROADCAST(""),
     FRAGMENT("android.app.Fragment"),
-    FRAGMENT_V4("android.support.v4.app.Fragment"),
+    FRAGMENTX("androidx.fragment.app.Fragment"),
 }

@@ -3,18 +3,19 @@ package com.github.richardwrq.krouter.fragment;
 import android.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.github.richardwrq.krouter.R;
 import com.github.richardwrq.common.RouterTable;
+import com.github.richardwrq.krouter.R;
 import com.github.richardwrq.krouter.annotation.Inject;
 import com.github.richardwrq.krouter.annotation.Route;
 import com.github.richardwrq.krouter.api.core.KRouter;
+
+import androidx.annotation.Nullable;
 
 /**
  * @author WuRuiQiang <a href="mailto:263454190@qq.com">Contact me.</a>

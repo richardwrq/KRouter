@@ -10,7 +10,7 @@ android {
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
     }
 
@@ -26,9 +26,11 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation deps.krouter.annotation
-//    implementation project(":krouter-annotation")
-
+    if (Boolean.valueOf(LOCAL_TEST)) {
+        implementation project(":krouter-annotation")
+    } else {
+        implementation deps.krouter.annotation
+    }
     testImplementation deps.junit
     androidTestImplementation deps.support.test.runner
     androidTestImplementation deps.support.test.espresso.core
@@ -38,4 +40,6 @@ dependencies {
     implementation deps.kotlin.reflect
 }
 
-//apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"
+if (!Boolean.valueOf(LOCAL_TEST)) {
+    apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"
+}

@@ -21,7 +21,8 @@ import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 import kotlin.collections.HashMap
 import kotlin.reflect.jvm.internal.impl.name.FqName
-import kotlin.reflect.jvm.internal.impl.platform.JavaToKotlinClassMap
+import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 
 
 abstract class BaseProcessor : AbstractProcessor() {
@@ -111,7 +112,7 @@ class RouteProcessor : BaseProcessor() {
         val tmActivity = mElements.getTypeElement(ACTIVITY.className).asType()
         val tmService = mElements.getTypeElement(SERVICE.className).asType()
         val tmFragment = mElements.getTypeElement(FRAGMENT.className).asType()
-        val tmFragmentV4 = mElements.getTypeElement(FRAGMENT_V4.className)?.asType()
+        val tmFragmentV4 = mElements.getTypeElement(FRAGMENTX.className)?.asType()
         val tmContentProvider = mElements.getTypeElement(CONTENT_PROVIDER.className).asType()
 
         /**
@@ -119,7 +120,8 @@ class RouteProcessor : BaseProcessor() {
          * Map<String, RouteMetadata>
          * 因为用MutableMap::class作为参数最终生成的kotlin代码类型是Map，而Map在kotlin中是只读的
          */
-        val mapTypeOfRouteLoader = ParameterizedTypeName.get(ClassName("kotlin.collections", "MutableMap"), String::class.asClassName(), RouteMetadata::class.asClassName())
+        val map = ClassName("kotlin.collections", "MutableMap")
+        val mapTypeOfRouteLoader = map.parameterizedBy(String::class.asClassName(), RouteMetadata::class.asClassName())
 
         //Generate implement IRouteLoader interface class
         val routeLoaderFunSpecBuild = FunSpec.builder(METHOD_LOAD)
@@ -143,7 +145,7 @@ class RouteProcessor : BaseProcessor() {
                 }
                 mTypes.isSubtype(it.asType(), tmFragmentV4) -> {
                     mLogger.info("Found Fragment_v4 ${it.asType()}")
-                    FRAGMENT_V4
+                    FRAGMENTX
                 }
                 mTypes.isSubtype(it.asType(), tmContentProvider) -> {
                     mLogger.info("Found Content Provider ${it.asType()}")
@@ -218,7 +220,8 @@ class InterceptorProcessor : BaseProcessor() {
          * generate map code like:
          * Map<String, InterceptorMetaData>
          */
-        val mapTypeOfRouteLoader = ParameterizedTypeName.get(TreeMap::class, Int::class, InterceptorMetaData::class)
+        val map = ClassName("java.util", "TreeMap")
+        val mapTypeOfRouteLoader = map.parameterizedBy(Int::class.asTypeName(), InterceptorMetaData::class.asTypeName())
 
         val interceptorLoaderFun = FunSpec.builder(METHOD_LOAD)
                 .addParameter("map", mapTypeOfRouteLoader)
@@ -285,11 +288,11 @@ class ProviderProcessor : BaseProcessor() {
          * generate map code like:
          * Map<String, Class>
          */
+        val map = ClassName("kotlin.collections", "MutableMap")
+        val clazz = ClassName.bestGuess(Class::class.java.name)
 //        val classTypeOfProviderLoader = ParameterizedTypeName.get(ClassName.bestGuess(Class::class.java.name), mElements.getTypeElement(IPROVIDER).asType().asTypeName())
-        val mapTypeOfProviderLoader = ParameterizedTypeName.get(
-                ClassName("kotlin.collections", "MutableMap"),
-                String::class.asClassName(),
-                ParameterizedTypeName.get(ClassName.bestGuess(Class::class.java.name), TypeVariableName.invoke("*")))
+        val mapTypeOfProviderLoader = map.parameterizedBy(String::class.asClassName(),
+                clazz.parameterizedBy(TypeVariableName.invoke("*")))
 
         val providerLoaderFun = FunSpec.builder(METHOD_LOAD)
                 .addParameter("map", mapTypeOfProviderLoader)
@@ -376,9 +379,9 @@ class InjectProcessor : BaseProcessor() {
 
         categoryElement.forEach { parent, children ->
 
-            val injectorFileBuilder = FileSpec.builder(parent.asClassName().packageName(), transferInjectorClassName(parent.qualifiedName.toString()))
+            val injectorFileBuilder = FileSpec.builder(parent.asClassName().packageName, transferInjectorClassName(parent.qualifiedName.toString()))
                     .addComment(WARNINGS)
-                    .addStaticImport(PACKAGE, METHOD_PARSE_OBJECT, METHOD_GET_BUNDLE)
+                    .addImport(PACKAGE, METHOD_PARSE_OBJECT, METHOD_GET_BUNDLE)
 
             val exInjectFun = FunSpec.builder(METHOD_EX_INJECT)
                     .receiver(parent.asType().asTypeName())
@@ -388,7 +391,7 @@ class InjectProcessor : BaseProcessor() {
             val injectFun = FunSpec.builder(METHOD_INJECT)
                     .addModifiers(KModifier.OVERRIDE)
                     .addParameter("any", Any::class)
-                    .addParameter("extras", tmBundle.asTypeName().asNullable())
+                    .addParameter("extras", tmBundle.asTypeName().copy(true))
                     .addStatement("val bundle = getBundle(any, extras)")
                     .addStatement("(any as %T).exInject(bundle)", parent.asType().asTypeName())
 
@@ -413,6 +416,7 @@ class InjectProcessor : BaseProcessor() {
                 } else {
                     //获取Java-》kotlin映射类型，如 java.lang.String转化为kotlin.String，如无需映射则直接返回element类型即可
                     val className = element.javaToKotlinType() ?: element.asType().asTypeName()
+                    val token = ClassName.bestGuess(TYPE_TOKEN)
                     exInjectFun.addStatement("${element.simpleName} = bundle.get(%S) as? %T ?: %T.getProvider<%T>(%S) ?: parseObject(bundle.getString(%S), object : %T() {}.getType())${element.asNonNullable()}",
                             key,
                             className,
@@ -420,7 +424,7 @@ class InjectProcessor : BaseProcessor() {
                             className,
                             key,
                             key,
-                            ParameterizedTypeName.get(ClassName.bestGuess(TYPE_TOKEN), className))
+                            token.parameterizedBy(className))
                 }
 
             }
@@ -479,7 +483,7 @@ class InjectProcessor : BaseProcessor() {
 
         return if (getAnnotation(NotNull::class.java) != null
                 || this.annotationMirrors.find { it.annotationType == tmNonNull } != null) {
-            " ?: throw $NP_EXCEPTION(\"Field [$simpleName] must not be null in [${enclosingElement.simpleName}]!\")"
+            " ?: throw $NP_EXCEPTION(\"\"\"Field [$simpleName] must not be null in [${enclosingElement.simpleName}]!\"\"\")"
         } else {
             ""
         }
@@ -491,33 +495,65 @@ class InjectProcessor : BaseProcessor() {
     private fun Element.javaToKotlinType(): TypeName =
             asType().asTypeName().javaToKotlinType()
 
-    private fun TypeName.javaToKotlinType(): TypeName {
-        return if (this is ParameterizedTypeName) {
-            ParameterizedTypeName.get(
-                    rawType.javaToKotlinType() as ClassName,
-                    *typeArguments.map { it.javaToKotlinType() }.toTypedArray()
-            )
-        } else {
-            val className =
-                    JavaToKotlinClassMap.INSTANCE.mapJavaToKotlin(FqName(toString()))
-                            ?.asSingleFqName()?.asString()
+//    private fun TypeName.javaToKotlinType(): TypeName {
+//        return if (this is ParameterizedTypeName) {
+//            ParameterizedTypeName.get(
+//                    rawType.javaToKotlinType() as ClassName,
+//                    *typeArguments.map { it.javaToKotlinType() }.toTypedArray()
+//            )
+//        } else {
+//            val className =
+//                    JavaToKotlinClassMap.INSTANCE.mapJavaToKotlin(FqName(toString()))
+//                            ?.asSingleFqName()?.asString()
+//
+//            return if (className == null) {
+//                this
+//            } else {
+//                ClassName.bestGuess(className)
+//            }
+//        }
+//    }
 
-            return if (className == null) {
-                this
-            } else {
-                ClassName.bestGuess(className)
+    private fun TypeName.javaToKotlinType(): TypeName {
+
+        return when (this) {
+            is ParameterizedTypeName -> {
+                (rawType.javaToKotlinType() as ClassName).parameterizedBy(
+                        *typeArguments.map {
+                            it.javaToKotlinType()
+                        }.toTypedArray()
+                )
+            }
+            is WildcardTypeName -> {
+                val type =
+                        if (inTypes.isNotEmpty()) WildcardTypeName.consumerOf(inTypes[0].javaToKotlinType())
+                        else WildcardTypeName.producerOf(outTypes[0].javaToKotlinType())
+
+                type
+            }
+
+            else -> {
+                val className = JavaToKotlinClassMap.INSTANCE
+                        .mapJavaToKotlin(FqName(toString()))?.asSingleFqName()?.asString()
+                if (className == null) {
+                    this
+                } else {
+                    ClassName.bestGuess(className)
+                }
             }
         }
     }
 
+
+
     private fun buildGetBundleFun(): FunSpec {
         val tmActivity = mElements.getTypeElement(ACTIVITY.className).asType()
         val tmFragment = mElements.getTypeElement(FRAGMENT.className).asType()
-        val tmFragmentV4 = mElements.getTypeElement(FRAGMENT_V4.className).asType()
+        val tmFragmentV4 = mElements.getTypeElement(FRAGMENTX.className).asType()
         return FunSpec.builder(METHOD_GET_BUNDLE)
                 .addModifiers(KModifier.INTERNAL)
                 .addParameter("any", Any::class)
-                .addParameter("extras", tmBundle.asTypeName().asNullable())
+                .addParameter("extras", tmBundle.asTypeName().copy(true))
                 .returns(tmBundle.asTypeName())
                 .addCode("return extras ?: when (any) {\n" +
                         "            is %T -> {\n" +
@@ -549,8 +585,8 @@ class InjectProcessor : BaseProcessor() {
         return FunSpec.builder(METHOD_PARSE_OBJECT)
                 .addModifiers(KModifier.INTERNAL)
                 .addTypeVariable(TypeVariableName.invoke("T"))
-                .returns(TypeVariableName.invoke("T").asNullable())
-                .addParameter("text", String::class.asTypeName().asNullable())
+                .returns(TypeVariableName.invoke("T").copy(true))
+                .addParameter("text", String::class.asTypeName().copy(true))
                 .addParameter("type", tmType.asTypeName())
                 .addStatement("val serializeProvider = %T.getProvider<%T>(%T) ?: throw %T(%S)",
                         tmKRouter.asTypeName(),

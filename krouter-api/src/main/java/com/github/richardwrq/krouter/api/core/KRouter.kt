@@ -9,7 +9,7 @@ import android.content.Intent.*
 import android.content.ServiceConnection
 import android.net.Uri
 import android.os.*
-import android.support.annotation.IntDef
+import androidx.annotation.IntDef
 import android.util.Size
 import android.util.SizeF
 import android.util.SparseArray
@@ -115,51 +115,51 @@ object KRouter {
         return Router.getInstance().route(path) as? T
     }
 
-    @IntDef(FLAG_GRANT_READ_URI_PERMISSION.toLong(),
-            FLAG_GRANT_WRITE_URI_PERMISSION.toLong(),
-            FLAG_FROM_BACKGROUND.toLong(),
-            FLAG_DEBUG_LOG_RESOLUTION.toLong(),
-            FLAG_EXCLUDE_STOPPED_PACKAGES.toLong(),
-            FLAG_INCLUDE_STOPPED_PACKAGES.toLong(),
-            FLAG_GRANT_PERSISTABLE_URI_PERMISSION.toLong(),
-            FLAG_GRANT_PREFIX_URI_PERMISSION.toLong(),
-            FLAG_ACTIVITY_NO_HISTORY.toLong(),
-            FLAG_ACTIVITY_SINGLE_TOP.toLong(),
-            FLAG_ACTIVITY_NEW_TASK.toLong(),
-            FLAG_ACTIVITY_MULTIPLE_TASK.toLong(),
-            FLAG_ACTIVITY_CLEAR_TOP.toLong(),
-            FLAG_ACTIVITY_FORWARD_RESULT.toLong(),
-            FLAG_ACTIVITY_PREVIOUS_IS_TOP.toLong(),
-            FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS.toLong(),
-            FLAG_ACTIVITY_BROUGHT_TO_FRONT.toLong(),
-            FLAG_ACTIVITY_RESET_TASK_IF_NEEDED.toLong(),
-            FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY.toLong(),
-            FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET.toLong(),
-            FLAG_ACTIVITY_NEW_DOCUMENT.toLong(),
-            FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET.toLong(),
-            FLAG_ACTIVITY_NO_USER_ACTION.toLong(),
-            FLAG_ACTIVITY_REORDER_TO_FRONT.toLong(),
-            FLAG_ACTIVITY_NO_ANIMATION.toLong(),
-            FLAG_ACTIVITY_CLEAR_TASK.toLong(),
-            FLAG_ACTIVITY_TASK_ON_HOME.toLong(),
-            FLAG_ACTIVITY_RETAIN_IN_RECENTS.toLong(),
-            FLAG_ACTIVITY_LAUNCH_ADJACENT.toLong(),
-            FLAG_RECEIVER_REGISTERED_ONLY.toLong(),
-            FLAG_RECEIVER_REPLACE_PENDING.toLong(),
-            FLAG_RECEIVER_FOREGROUND.toLong(),
-            FLAG_RECEIVER_NO_ABORT.toLong(),
-            FLAG_RECEIVER_VISIBLE_TO_INSTANT_APPS.toLong())
+    @IntDef(FLAG_GRANT_READ_URI_PERMISSION,
+            FLAG_GRANT_WRITE_URI_PERMISSION,
+            FLAG_FROM_BACKGROUND,
+            FLAG_DEBUG_LOG_RESOLUTION,
+            FLAG_EXCLUDE_STOPPED_PACKAGES,
+            FLAG_INCLUDE_STOPPED_PACKAGES,
+            FLAG_GRANT_PERSISTABLE_URI_PERMISSION,
+            FLAG_GRANT_PREFIX_URI_PERMISSION,
+            FLAG_ACTIVITY_NO_HISTORY,
+            FLAG_ACTIVITY_SINGLE_TOP,
+            FLAG_ACTIVITY_NEW_TASK,
+            FLAG_ACTIVITY_MULTIPLE_TASK,
+            FLAG_ACTIVITY_CLEAR_TOP,
+            FLAG_ACTIVITY_FORWARD_RESULT,
+            FLAG_ACTIVITY_PREVIOUS_IS_TOP,
+            FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS,
+            FLAG_ACTIVITY_BROUGHT_TO_FRONT,
+            FLAG_ACTIVITY_RESET_TASK_IF_NEEDED,
+            FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY,
+            FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET,
+            FLAG_ACTIVITY_NEW_DOCUMENT,
+            FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET,
+            FLAG_ACTIVITY_NO_USER_ACTION,
+            FLAG_ACTIVITY_REORDER_TO_FRONT,
+            FLAG_ACTIVITY_NO_ANIMATION,
+            FLAG_ACTIVITY_CLEAR_TASK,
+            FLAG_ACTIVITY_TASK_ON_HOME,
+            FLAG_ACTIVITY_RETAIN_IN_RECENTS,
+            FLAG_ACTIVITY_LAUNCH_ADJACENT,
+            FLAG_RECEIVER_REGISTERED_ONLY,
+            FLAG_RECEIVER_REPLACE_PENDING,
+            FLAG_RECEIVER_FOREGROUND,
+            FLAG_RECEIVER_NO_ABORT,
+            FLAG_RECEIVER_VISIBLE_TO_INSTANT_APPS)
     @Retention(AnnotationRetention.SOURCE)
     annotation class FlagInt
 
-    @IntDef(BIND_AUTO_CREATE.toLong(),
-            BIND_DEBUG_UNBIND.toLong(),
-            BIND_NOT_FOREGROUND.toLong(),
-            BIND_ABOVE_CLIENT.toLong(),
-            BIND_ALLOW_OOM_MANAGEMENT.toLong(),
-            BIND_WAIVE_PRIORITY.toLong(),
-            BIND_IMPORTANT.toLong(),
-            BIND_ADJUST_WITH_ACTIVITY.toLong())
+    @IntDef(BIND_AUTO_CREATE,
+            BIND_DEBUG_UNBIND,
+            BIND_NOT_FOREGROUND,
+            BIND_ABOVE_CLIENT,
+            BIND_ALLOW_OOM_MANAGEMENT,
+            BIND_WAIVE_PRIORITY,
+            BIND_IMPORTANT,
+            BIND_ADJUST_WITH_ACTIVITY)
     @Retention(AnnotationRetention.SOURCE)
     annotation class BindServiceFlags
 
@@ -195,7 +195,7 @@ object KRouter {
             private set
         var fragment: Fragment? = null
             private set
-        var fragmentV4: android.support.v4.app.Fragment? = null
+        var fragmentV4: androidx.fragment.app.Fragment? = null
             private set
         var options: Bundle? = null
             private set
@@ -488,7 +488,7 @@ object KRouter {
          * @see [Activity.startActivityForResult]
          */
         @JvmOverloads
-        fun withRequestCode(fragment: android.support.v4.app.Fragment, requestCode: Int, options: Bundle? = null): Navigator {
+        fun withRequestCode(fragment: androidx.fragment.app.Fragment, requestCode: Int, options: Bundle? = null): Navigator {
             fragmentV4 = fragment
             this.requestCode = requestCode
             this.options = options

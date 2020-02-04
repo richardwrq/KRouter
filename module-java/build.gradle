@@ -1,7 +1,9 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
-apply plugin: "com.github.richardwrq.krouter"
+if (!LOCAL_TEST) {
+    apply plugin: "com.github.richardwrq.krouter"
+}
 
 android {
     compileSdkVersion versions.compileSdk
@@ -12,7 +14,7 @@ android {
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
     }
 
@@ -25,11 +27,13 @@ android {
 
 }
 
-//kapt {
-//    arguments {
-//        arg("moduleName", project.getName())
-//    }
-//}
+if (LOCAL_TEST) {
+    kapt {
+        arguments {
+            arg("moduleName", project.getName())
+        }
+    }
+}
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -41,10 +45,12 @@ dependencies {
 
     implementation deps.kotlin.stdLibJre8
     implementation project(':common')
-//    implementation project(':krouter-api')
-//    implementation project(':krouter-annotation')
-//    kapt project(':krouter-compiler')
-
-//    implementation deps.krouter.api
-//    kapt deps.krouter.compiler
+    if (LOCAL_TEST) {
+        implementation project(':krouter-api')
+        implementation project(':krouter-annotation')
+        kapt project(':krouter-compiler')
+    } else {
+        implementation deps.krouter.api
+        kapt deps.krouter.compiler
+    }
 }

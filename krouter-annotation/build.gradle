@@ -12,4 +12,6 @@ repositories {
     mavenCentral()
 }
 
-//apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"
+if (!Boolean.valueOf(LOCAL_TEST)) {
+    apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"
+}

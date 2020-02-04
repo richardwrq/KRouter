@@ -11,8 +11,13 @@ dependencies {
     implementation deps.kotlin.reflect
     implementation deps.kotlin.stdLibJre8
     implementation deps.kotlinpoet
-    api deps.krouter.annotation
-//    compile project(':krouter-annotation')
+    if (Boolean.valueOf(LOCAL_TEST)) {
+        compile project(':krouter-annotation')
+    } else {
+        api deps.krouter.annotation
+    }
 }
 
-//apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"
+if (!Boolean.valueOf(LOCAL_TEST)) {
+    apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"
+}

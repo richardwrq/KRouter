@@ -13,4 +13,6 @@ dependencies {
 sourceCompatibility = "1.7"
 targetCompatibility = "1.7"
 
-//apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"
+if (!Boolean.valueOf(LOCAL_TEST)) {
+    apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"
+}

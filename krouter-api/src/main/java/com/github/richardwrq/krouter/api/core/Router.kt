@@ -89,7 +89,7 @@ internal class Router private constructor() {
                     Logger.d("Start handler ")
                     val result = it.handle(context, navigator)
                     navigator.routeArrivedCallback?.invoke(navigator, it.routeMetadata.clazz.name)
-                    if (result is Fragment || result is android.support.v4.app.Fragment) {
+                    if (result is Fragment || result is androidx.fragment.app.Fragment) {
                         return result
                     }
                 }

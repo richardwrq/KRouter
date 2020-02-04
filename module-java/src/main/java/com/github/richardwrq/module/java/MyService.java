@@ -3,7 +3,7 @@ package com.github.richardwrq.module.java;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.widget.Toast;
 
 import com.github.richardwrq.common.RouterTable;

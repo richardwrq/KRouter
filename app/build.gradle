@@ -1,13 +1,15 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
-apply plugin: "com.github.richardwrq.krouter"
-
-//kapt {
-//    arguments {
-//        arg("moduleName", project.getName())
-//    }
-//}
+if (!Boolean.valueOf(LOCAL_TEST)) {
+    apply plugin: "com.github.richardwrq.krouter"
+} else {
+    kapt {
+        arguments {
+            arg("moduleName", project.getName())
+        }
+    }
+}
 
 android {
     compileSdkVersion versions.compileSdk
@@ -17,7 +19,7 @@ android {
         targetSdkVersion versions.compileSdk
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         debug {
@@ -57,9 +59,12 @@ dependencies {
     implementation deps.gson
     implementation project(':module-java')
     implementation project(':common')
-//    kapt deps.krouter.compiler
-//    implementation deps.krouter.api
-//    implementation project(':krouter-api')
-//    implementation project(':krouter-annotation')
-//    kapt project(':krouter-compiler')
+    if (Boolean.valueOf(LOCAL_TEST)) {
+        implementation project(':krouter-api')
+        implementation project(':krouter-annotation')
+        kapt project(':krouter-compiler')
+    } else {
+        kapt deps.krouter.compiler
+        implementation deps.krouter.api
+    }
 }

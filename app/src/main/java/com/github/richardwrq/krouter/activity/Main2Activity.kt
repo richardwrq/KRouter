@@ -1,7 +1,7 @@
 package com.github.richardwrq.krouter.activity
 
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.widget.TextView
 import com.github.richardwrq.common.RouterTable
 import com.github.richardwrq.krouter.R

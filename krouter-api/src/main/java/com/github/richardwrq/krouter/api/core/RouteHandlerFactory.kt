@@ -5,7 +5,7 @@ import android.app.Fragment
 import android.content.*
 import android.os.Handler
 import android.os.Looper
-import android.support.v4.app.ActivityCompat
+import androidx.core.app.ActivityCompat
 import android.widget.Toast
 import com.github.richardwrq.krouter.annotation.RouteType
 import com.github.richardwrq.krouter.annotation.model.RouteMetadata
@@ -31,8 +31,8 @@ internal fun createHandler(routeMetadata: RouteMetadata): AbsRouteHandler {
         RouteType.FRAGMENT -> {
             FragmentHandler(routeMetadata)
         }
-        RouteType.FRAGMENT_V4 -> {
-            FragmentV4tHandler(routeMetadata)
+        RouteType.FRAGMENTX -> {
+            FragmentXHandler(routeMetadata)
         }
         RouteType.CONTENT_PROVIDER -> {
             ContentProviderHandler(routeMetadata)
@@ -184,15 +184,15 @@ internal class FragmentHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(r
 }
 
 /**
- * FragmentV4
+ * Android x Fragment
  */
-internal class FragmentV4tHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(routeMetadata) {
+internal class FragmentXHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(routeMetadata) {
 
     override fun handle(context: Context, navigator: KRouter.Navigator): Any? {
-        Logger.i("Handle FragmentV4..")
+        Logger.i("Handle android x Fragment..")
         try {
             val clazz = routeMetadata.clazz
-            val fragment = clazz.newInstance() as android.support.v4.app.Fragment
+            val fragment = clazz.newInstance() as androidx.fragment.app.Fragment
             fragment.arguments = navigator.extras
             return fragment
         } catch (e: ClassCastException) {
