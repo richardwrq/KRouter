@@ -7,7 +7,6 @@ import com.github.richardwrq.krouter.annotation.model.RouteMetadata
 import com.github.richardwrq.krouter.compiler.*
 import com.google.auto.service.AutoService
 import com.squareup.kotlinpoet.*
-import org.jetbrains.annotations.NotNull
 import java.io.File
 import java.util.*
 import javax.annotation.processing.*
@@ -19,7 +18,6 @@ import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
-import kotlin.collections.HashMap
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 
 
@@ -30,6 +28,7 @@ abstract class BaseProcessor : AbstractProcessor() {
     protected lateinit var mLogger: Logger
     protected lateinit var mFormatModuleName: String
     protected lateinit var mOriginalModuleName: String
+    private var generated = false
 
     override fun init(p0: ProcessingEnvironment) {
         super.init(p0)
@@ -43,11 +42,6 @@ abstract class BaseProcessor : AbstractProcessor() {
     }
 
     override fun process(set: MutableSet<out TypeElement>, roundEnv: RoundEnvironment): Boolean {
-
-        if (set.isEmpty()) {
-            return false
-        }
-
         if (mOriginalModuleName.isBlank()) {
             mLogger.warning("this module name is null!!! skip this module!!")
             return false
@@ -59,8 +53,16 @@ abstract class BaseProcessor : AbstractProcessor() {
 //        }
 
         try {
-            mLogger.info("[$mOriginalModuleName] ${this::class.java.simpleName} process!!!")
-            collectInfo(roundEnv)
+            if (roundEnv.processingOver()) {
+                if (!generated) {
+                    mLogger.info("[$mOriginalModuleName] ${this::class.java.simpleName} generate!!!")
+                    generateCode()
+                    generated = true
+                }
+            } else {
+                mLogger.info("[$mOriginalModuleName] ${this::class.java.simpleName} collect!!!")
+                collectInfo(roundEnv)
+            }
         } catch (e: Exception) {
             mLogger.error(e)
         }
@@ -79,6 +81,8 @@ abstract class BaseProcessor : AbstractProcessor() {
 
     abstract fun collectInfo(roundEnv: RoundEnvironment)
 
+    abstract fun generateCode()
+
 }
 
 /**
@@ -94,10 +98,19 @@ abstract class BaseProcessor : AbstractProcessor() {
 @SupportedAnnotationTypes(value = ["com.github.richardwrq.krouter.annotation.Route"])
 class RouteProcessor : BaseProcessor() {
 
-    private val routeMap = HashMap<String, RouteMetadata>()
+    private data class CollectedRoute(
+            val type: TypeName,
+            val routeType: RouteType,
+            val priority: Int,
+            val name: String,
+            val path: String,
+            val pathPrefix: String,
+            val pathPattern: String)
+
+    private val routeMap = TreeMap<String, CollectedRoute>()
+    private val routeOwners = LinkedHashMap<String, String>()
 
     override fun collectInfo(roundEnv: RoundEnvironment) {
-        routeMap.clear()
         val elements = roundEnv.getElementsAnnotatedWith(Route::class.java)
         if (elements.isEmpty()) {
             return
@@ -110,20 +123,7 @@ class RouteProcessor : BaseProcessor() {
         val tmFragmentV4 = mElements.getTypeElement(FRAGMENTX.className)?.asType()
         val tmContentProvider = mElements.getTypeElement(CONTENT_PROVIDER.className).asType()
 
-        /**
-         * generate map code like:
-         * Map<String, RouteMetadata>
-         * 因为用MutableMap::class作为参数最终生成的kotlin代码类型是Map，而Map在kotlin中是只读的
-         */
-        val map = ClassName("kotlin.collections", "MutableMap")
-        val mapTypeOfRouteLoader = map.parameterizedBy(String::class.asClassName(), RouteMetadata::class.asClassName())
-
-        //Generate implement IRouteLoader interface class
-        val routeLoaderFunSpecBuild = FunSpec.builder(METHOD_LOAD)
-                .addParameter("map", mapTypeOfRouteLoader)
-                .addModifiers(KModifier.OVERRIDE)
-
-        elements.forEach {
+        elements.sortedBy { it.asType().toString() }.forEach {
             val routeAnn = it.getAnnotation(Route::class.java)
             val routeType = when {
                 mTypes.isSubtype(it.asType(), tmActivity) -> {
@@ -138,7 +138,7 @@ class RouteProcessor : BaseProcessor() {
                     mLogger.info("Found Fragment ${it.asType()}")
                     FRAGMENT
                 }
-                mTypes.isSubtype(it.asType(), tmFragmentV4) -> {
+                tmFragmentV4 != null && mTypes.isSubtype(it.asType(), tmFragmentV4) -> {
                     mLogger.info("Found Fragment_v4 ${it.asType()}")
                     FRAGMENTX
                 }
@@ -151,27 +151,49 @@ class RouteProcessor : BaseProcessor() {
                     UNKNOWN
                 }
             }
-            if (routeAnn.path.isNotBlank()) {
-                if (routeMap.containsKey(routeAnn.path)) {
-                    mLogger.warning("The route ${routeMap[routeAnn.path]?.name} already has Path { ${routeAnn.path} }, so skip route ${it.asType()}")
-                    return@forEach
-                }
-                routeMap[routeAnn.path] = RouteMetadata(name = it.asType().toString())
+            val typeName = it.asType().toString()
+            registerRoutePath(routeOwners, routeAnn.path, typeName)
+            routeMap[routeAnn.path] = CollectedRoute(
+                    type = it.asType().asTypeName(),
+                    routeType = routeType,
+                    priority = routeAnn.priority,
+                    name = routeAnn.name,
+                    path = routeAnn.path,
+                    pathPrefix = routeAnn.pathPrefix,
+                    pathPattern = routeAnn.pathPattern)
+        }
+    }
 
-                routeLoaderFunSpecBuild.addStatement(
-                        "map[%S] = %T(%T.%L, %L, %S, %S, %S, %S, %T::class.java)",
-                        routeAnn.path,
-                        RouteMetadata::class,
-                        RouteType::class,
-                        routeType,
-                        routeAnn.priority,
-                        routeAnn.name,
-                        routeAnn.path,
-                        routeAnn.pathPrefix,
-                        routeAnn.pathPattern,
-                        it.asType())
-            }
-//            pack = processingEnv.elementUtils.getPackageOf(it).toString()
+    override fun generateCode() {
+        if (routeMap.isEmpty()) {
+            return
+        }
+
+        /**
+         * generate map code like:
+         * Map<String, RouteMetadata>
+         * 因为用MutableMap::class作为参数最终生成的kotlin代码类型是Map，而Map在kotlin中是只读的
+         */
+        val map = ClassName("kotlin.collections", "MutableMap")
+        val mapTypeOfRouteLoader = map.parameterizedBy(String::class.asClassName(), RouteMetadata::class.asClassName())
+
+        val routeLoaderFunSpecBuild = FunSpec.builder(METHOD_LOAD)
+                .addParameter("map", mapTypeOfRouteLoader)
+                .addModifiers(KModifier.OVERRIDE)
+
+        routeMap.values.forEach { route ->
+            routeLoaderFunSpecBuild.addStatement(
+                    "map[%S] = %T(%T.%L, %L, %S, %S, %S, %S, %T::class.java)",
+                    route.path,
+                    RouteMetadata::class,
+                    RouteType::class,
+                    route.routeType,
+                    route.priority,
+                    route.name,
+                    route.path,
+                    route.pathPrefix,
+                    route.pathPattern,
+                    route.type)
         }
 
         val typeIRouteLoader = TypeSpec.classBuilder("$ROUTE_LOADER_NAME$SEPARATOR$mFormatModuleName")
@@ -200,16 +222,47 @@ class RouteProcessor : BaseProcessor() {
 @SupportedAnnotationTypes(value = ["com.github.richardwrq.krouter.annotation.Interceptor"])
 class InterceptorProcessor : BaseProcessor() {
 
-    private val interceptorMap = TreeMap<Int, InterceptorMetaData>()
+    private data class CollectedInterceptor(
+            val type: TypeName,
+            val typeName: String,
+            val priority: Int,
+            val name: String)
+
+    private val interceptorMap = TreeMap<Int, CollectedInterceptor>()
 
     override fun collectInfo(roundEnv: RoundEnvironment) {
-        interceptorMap.clear()
         val elements = roundEnv.getElementsAnnotatedWith(Interceptor::class.java)
         if (elements.isEmpty()) {
             return
         }
 
         val tmIInterceptor = mElements.getTypeElement(com.github.richardwrq.krouter.compiler.INTERCEPTOR).asType()
+
+        elements.sortedBy { it.asType().toString() }.forEach {
+            val interceptorAnn = it.getAnnotation(Interceptor::class.java)
+
+            if (mTypes.isSubtype(it.asType(), tmIInterceptor)) {
+                if (interceptorMap.containsKey(interceptorAnn.priority)) {
+                    val existClass = interceptorMap[interceptorAnn.priority]?.typeName
+                    throw IllegalArgumentException(
+                            "Duplicate interceptor priority '${interceptorAnn.priority}': $existClass and ${it.asType()}")
+                }
+                interceptorMap[interceptorAnn.priority] = CollectedInterceptor(
+                        type = it.asType().asTypeName(),
+                        typeName = it.asType().toString(),
+                        priority = interceptorAnn.priority,
+                        name = interceptorAnn.name.trim())
+                mLogger.info("Found Interceptor ${it.asType()} in [$mOriginalModuleName]")
+            } else {
+                mLogger.warning("Interceptor ${it.simpleName} does not impl IInterceptor")
+            }
+        }
+    }
+
+    override fun generateCode() {
+        if (interceptorMap.isEmpty()) {
+            return
+        }
 
         /**
          * generate map code like:
@@ -222,26 +275,14 @@ class InterceptorProcessor : BaseProcessor() {
                 .addParameter("map", mapTypeOfRouteLoader)
                 .addModifiers(KModifier.OVERRIDE)
 
-        elements.forEach {
-            val interceptorAnn = it.getAnnotation(Interceptor::class.java)
-
-            if (mTypes.isSubtype(it.asType(), tmIInterceptor)) {
-                if (interceptorMap.containsKey(interceptorAnn.priority)) {
-                    val existClass = interceptorMap[interceptorAnn.priority]?.name
-                    mLogger.warning("Priority [${interceptorAnn.priority}] interceptor [$existClass] already exist, ${it.asType()} will be skip")
-                    return@forEach
-                }
-                interceptorMap[interceptorAnn.priority] = InterceptorMetaData(name = it.asType().toString())
-                mLogger.info("Found Interceptor ${it.asType()} in [$mOriginalModuleName]")
-                interceptorLoaderFun.addStatement(
-                        "map[${interceptorAnn.priority}] = %T(%L, %S, %T::class.java)",
-                        InterceptorMetaData::class,
-                        interceptorAnn.priority,
-                        interceptorAnn.name.trim(),
-                        it.asType())
-            } else {
-                mLogger.warning("Interceptor ${it.simpleName} does not impl IInterceptor")
-            }
+        interceptorMap.values.forEach { interceptor ->
+            interceptorLoaderFun.addStatement(
+                    "map[%L] = %T(%L, %S, %T::class.java)",
+                    interceptor.priority,
+                    InterceptorMetaData::class,
+                    interceptor.priority,
+                    interceptor.name,
+                    interceptor.type)
         }
 
         val typeInterceptorLoader = TypeSpec.classBuilder("$INTERCEPTOR_LOADER_NAME$SEPARATOR$mFormatModuleName")
@@ -270,12 +311,34 @@ class InterceptorProcessor : BaseProcessor() {
 @SupportedAnnotationTypes(value = ["com.github.richardwrq.krouter.annotation.Provider"])
 class ProviderProcessor : BaseProcessor() {
 
-    private val providerMap = HashMap<String, String>()
+    private data class CollectedProvider(
+            val type: TypeName,
+            val key: String)
+
+    private val providerMap = TreeMap<String, CollectedProvider>()
+    private val providerOwners = LinkedHashMap<String, String>()
 
     override fun collectInfo(roundEnv: RoundEnvironment) {
-        providerMap.clear()
         val elements = roundEnv.getElementsAnnotatedWith(Provider::class.java)
         if (elements.isEmpty()) {
+            return
+        }
+
+        elements.sortedBy { it.asType().toString() }.forEach {
+            val providerAnn = it.getAnnotation(Provider::class.java)
+            val typeName = it.asType().toString()
+
+            registerProviderKey(providerOwners, providerAnn.value, typeName)
+            providerMap[providerAnn.value] = CollectedProvider(
+                    type = it.asType().asTypeName(),
+                    key = providerAnn.value)
+
+            mLogger.info("Found Provider ${it.asType()} in [$mOriginalModuleName]")
+        }
+    }
+
+    override fun generateCode() {
+        if (providerMap.isEmpty()) {
             return
         }
 
@@ -285,7 +348,6 @@ class ProviderProcessor : BaseProcessor() {
          */
         val map = ClassName("kotlin.collections", "MutableMap")
         val clazz = ClassName.bestGuess(Class::class.java.name)
-//        val classTypeOfProviderLoader = ParameterizedTypeName.get(ClassName.bestGuess(Class::class.java.name), mElements.getTypeElement(IPROVIDER).asType().asTypeName())
         val mapTypeOfProviderLoader = map.parameterizedBy(String::class.asClassName(),
                 clazz.parameterizedBy(TypeVariableName.invoke("*")))
 
@@ -293,18 +355,8 @@ class ProviderProcessor : BaseProcessor() {
                 .addParameter("map", mapTypeOfProviderLoader)
                 .addModifiers(KModifier.OVERRIDE)
 
-        elements.sortedBy { it.asType().toString() }.forEach {
-            val providerAnn = it.getAnnotation(Provider::class.java)
-
-            registerProviderKey(providerMap, providerAnn.value, it.asType().toString())
-
-            mLogger.info("Found Provider ${it.asType()} in [$mOriginalModuleName]")
-//            if (mTypes.isSubtype(it.asType(), tmProvider)) {
-            providerLoaderFun.addCode("%L\n", providerAssignment(providerAnn.value, it.asType().asTypeName()))
-//            } else {
-//                mLogger.warning("Provider ${it.simpleName} does not impl IProvider")
-//                return@forEach
-//            }
+        providerMap.values.forEach { provider ->
+            providerLoaderFun.addCode("%L\n", providerAssignment(provider.key, provider.type))
         }
 
         val typeProviderLoader = TypeSpec.classBuilder("$PROVIDER_LOADER_NAME$SEPARATOR$mFormatModuleName")
@@ -334,12 +386,24 @@ class ProviderProcessor : BaseProcessor() {
 @SupportedAnnotationTypes(value = ["com.github.richardwrq.krouter.annotation.Inject"])
 class InjectProcessor : BaseProcessor() {
 
-    private val categoryElement = HashMap<TypeElement, MutableList<Element>>()
+    private data class CollectedInjectField(
+            val name: String,
+            val key: String,
+            val type: TypeName,
+            val required: Boolean,
+            val provider: Boolean)
+
+    private data class CollectedInjectTarget(
+            val type: TypeName,
+            val className: ClassName,
+            val binaryName: String,
+            val simpleName: String,
+            val fields: TreeMap<String, CollectedInjectField> = TreeMap())
+
+    private val injectTargets = TreeMap<String, CollectedInjectTarget>()
 
     private lateinit var tmProvider: TypeMirror
     private lateinit var tmBundle: TypeMirror
-    private lateinit var tmIllegalArgumentException: TypeMirror
-    //  private lateinit var tmNPException: TypeMirror
     private lateinit var tmKRouter: TypeMirror
 
     override fun init(p0: ProcessingEnvironment) {
@@ -347,128 +411,174 @@ class InjectProcessor : BaseProcessor() {
 
         tmProvider = mElements.getTypeElement(PROVIDER).asType()
         tmBundle = mElements.getTypeElement(BUNDLE).asType()
-        tmIllegalArgumentException = mElements.getTypeElement(ILLEGAL_ARGUMENT_EXCEPTION).asType()
-//      tmNPException = mElements.getTypeElement(NP_EXCEPTION).asType()
         tmKRouter = mElements.getTypeElement(KROUTER).asType()
-
     }
 
     override fun collectInfo(roundEnv: RoundEnvironment) {
-        categoryElement.clear()
         val elements = roundEnv.getElementsAnnotatedWith(Inject::class.java)
-        categories(elements)
         if (elements.isEmpty()) {
             return
         }
 
-        //extension func file
-        val getBundleFun = buildGetBundleFun()
-
-        val parseObjectFun = buildParseObjectFun()
-
-        val extensionFileBuilder = FileSpec.builder(PACKAGE, "$INJECTOR_NAME$SEPARATOR$mFormatModuleName")
-                .addFileComment(WARNINGS)
-                .addFunction(getBundleFun)
-                .addFunction(parseObjectFun)
-
-        extensionFileBuilder.build().writeFile()
-
-        categoryElement.forEach { parent, children ->
-
-            val injectorFileBuilder = FileSpec.builder(parent.asClassName().packageName, transferInjectorClassName(parent.qualifiedName.toString()))
-                    .addFileComment(WARNINGS)
-                    .addImport(PACKAGE, METHOD_PARSE_OBJECT, METHOD_GET_BUNDLE)
-
-            val exInjectFun = FunSpec.builder(METHOD_EX_INJECT)
-                    .receiver(parent.asType().asTypeName())
-                    .addParameter("bundle", tmBundle.asTypeName())
-                    .addModifiers(KModifier.PRIVATE)
-
-            val injectFun = FunSpec.builder(METHOD_INJECT)
-                    .addModifiers(KModifier.OVERRIDE)
-                    .addParameter("any", Any::class)
-                    .addParameter("extras", tmBundle.asTypeName().copy(true))
-                    .addStatement("val bundle = getBundle(any, extras)")
-                    .addStatement("(any as %T).exInject(bundle)", parent.asType().asTypeName())
-
-            mLogger.info("start inject class ${parent.simpleName}")
-            children.forEach { element ->
-                val injectAnn = element.getAnnotation(Inject::class.java)
-                val key = if (injectAnn.name.isNotBlank()) {
-                    injectAnn.name
-                } else {
-                    element.simpleName
-                }
-                if (element.kind != ElementKind.FIELD) {
-                    throw IllegalArgumentException("Only field can be annotated with @${Inject::class.simpleName}")
-                }
-
-                mLogger.info("inject field [${element.simpleName}]")
-                val requiredValue = if (isJavaFile(parent)) {
-                    element.asNonNullable()
-                } else {
-                    element.missingValueSuffix()
-                }
-                if (mTypes.isSubtype(element.asType(), tmProvider)) {
-                    exInjectFun.addStatement("${element.simpleName} = %T.getProvider<%T>(%S)$requiredValue",
-                            tmKRouter.asTypeName(),
-                            element.asType().asTypeName(),
-                            key)
-                } else {
-                    //获取Java-》kotlin映射类型，如 java.lang.String转化为kotlin.String，如无需映射则直接返回element类型即可
-                    val className = element.javaToKotlinType()
-                    val token = ClassName.bestGuess(TYPE_TOKEN)
-                    exInjectFun.addStatement("${element.simpleName} = bundle.get(%S) as? %T ?: %T.getProvider<%T>(%S) ?: parseObject<%T>(bundle.getString(%S), object : %T() {}.getType())$requiredValue",
-                            key,
-                            className,
-                            tmKRouter.asTypeName(),
-                            className,
-                            key,
-                            className,
-                            key,
-                            token.parameterizedBy(className))
-                }
-
+        elements.sortedBy { "${it.enclosingElement}.${it.simpleName}" }.forEach { element ->
+            if (element.kind != ElementKind.FIELD) {
+                throw IllegalArgumentException("Only field can be annotated with @${Inject::class.simpleName}")
             }
 
-            val typeInjector = TypeSpec.classBuilder(transferInjectorClassName(parent.qualifiedName.toString()))
-                    .addSuperinterface(ClassName.bestGuess(INJECTOR))
-                    .addFunction(injectFun.build())
-                    .addFunction(exInjectFun.build())
-                    .build()
+            val parent = element.enclosingElement as TypeElement
+            if (isJavaFile(parent) && element.modifiers.contains(Modifier.PRIVATE)) {
+                throw IllegalAccessException("The inject fields CAN NOT BE 'private'!!! please check field ["
+                        + element.simpleName + "] in class [" + parent.qualifiedName + "]")
+            }
 
-            injectorFileBuilder.addType(typeInjector)
-            injectorFileBuilder.build().writeFile()
+            val injectAnn = element.getAnnotation(Inject::class.java)
+            val fieldName = element.simpleName.toString()
+            val key = injectAnn.name.ifBlank { fieldName }
+            val qualifiedName = parent.qualifiedName.toString()
+            val binaryName = mElements.getBinaryName(parent).toString()
+            val target = injectTargets.getOrPut(binaryName) {
+                CollectedInjectTarget(
+                        type = parent.asType().asTypeName(),
+                        className = parent.asClassName(),
+                        binaryName = binaryName,
+                        simpleName = parent.simpleName.toString())
+            }
+            val previous = target.fields.putIfAbsent(
+                    fieldName,
+                    CollectedInjectField(
+                            name = fieldName,
+                            key = key,
+                            type = element.javaToKotlinType().copy(nullable = false),
+                            required = injectAnn.isRequired,
+                            provider = mTypes.isSubtype(element.asType(), tmProvider)))
+            require(previous == null) {
+                "Duplicate injectable field '$qualifiedName.$fieldName'"
+            }
+            mLogger.info("Found injectable field [$qualifiedName.$fieldName]")
         }
-
     }
 
-    /**
-     * Categories field, find his papa. reference ARouter
-     *
-     * @param elements Field need inject
-     */
-    @Throws(IllegalAccessException::class)
-    private fun categories(elements: Set<Element>) {
-        if (elements.isNotEmpty()) {
-            for (element in elements) {
-                val enclosingElement = element.enclosingElement as TypeElement
+    override fun generateCode() {
+        if (injectTargets.isEmpty()) {
+            return
+        }
 
-                if (isJavaFile(enclosingElement) && element.modifiers.contains(Modifier.PRIVATE)) {
-                    throw IllegalAccessException("The inject fields CAN NOT BE 'private'!!! please check field ["
-                            + element.simpleName + "] in class [" + enclosingElement.qualifiedName + "]")
-                }
+        FileSpec.builder(PACKAGE, "$INJECTOR_NAME$SEPARATOR$mFormatModuleName")
+                .addFileComment(WARNINGS)
+                .addFunction(buildGetBundleFun())
+                .addFunction(buildParseObjectFun())
+                .build()
+                .writeFile()
 
-                if (categoryElement.containsKey(enclosingElement)) { // Has categories
-                    categoryElement[enclosingElement]?.add(element)
-                } else {
-                    val children = ArrayList<Element>()
-                    children.add(element)
-                    categoryElement[enclosingElement] = children
-                }
-            }
+        injectTargets.values.forEach { target ->
+            generateInjector(target)
+        }
+    }
 
-            mLogger.info("categories finished.")
+    private fun generateInjector(target: CollectedInjectTarget) {
+        val injectorFileBuilder = FileSpec.builder(
+                target.className.packageName,
+                transferInjectorClassName(target.binaryName))
+                .addFileComment(WARNINGS)
+                .addImport(PACKAGE, METHOD_PARSE_OBJECT, METHOD_GET_BUNDLE)
+
+        val exInjectFun = FunSpec.builder(METHOD_EX_INJECT)
+                .receiver(target.type)
+                .addParameter("bundle", tmBundle.asTypeName())
+                .addModifiers(KModifier.PRIVATE)
+
+        val injectFun = FunSpec.builder(METHOD_INJECT)
+                .addModifiers(KModifier.OVERRIDE)
+                .addParameter("any", Any::class)
+                .addParameter("extras", tmBundle.asTypeName().copy(true))
+                .addStatement("val bundle = getBundle(any, extras)")
+                .addStatement("(any as %T).exInject(bundle)", target.type)
+
+        mLogger.info("start inject class ${target.simpleName}")
+        target.fields.values.forEachIndexed { index, field ->
+            addFieldResolution(exInjectFun, field, index)
+        }
+
+        val typeInjector = TypeSpec.classBuilder(transferInjectorClassName(target.binaryName))
+                .addSuperinterface(ClassName.bestGuess(INJECTOR))
+                .addFunction(injectFun.build())
+                .addFunction(exInjectFun.build())
+                .build()
+
+        injectorFileBuilder.addType(typeInjector)
+        injectorFileBuilder.build().writeFile()
+    }
+
+    private fun addFieldResolution(
+            function: FunSpec.Builder,
+            field: CollectedInjectField,
+            index: Int) {
+        val resolvedName = "resolved$index"
+        val valueType = field.type.copy(nullable = false)
+
+        if (field.provider) {
+            function.addStatement(
+                    "val %N: %T = %T.getProvider<%T>(%S)",
+                    resolvedName,
+                    valueType.copy(nullable = true),
+                    tmKRouter.asTypeName(),
+                    valueType,
+                    field.key)
+        } else {
+            val hasValueName = "hasValue$index"
+            val rawValueName = "rawValue$index"
+            val token = ClassName.bestGuess(TYPE_TOKEN).parameterizedBy(valueType)
+            function.addStatement("val %N = bundle.containsKey(%S)", hasValueName, field.key)
+            function.beginControlFlow(
+                    "val %N: %T = if (%N)",
+                    resolvedName,
+                    valueType.copy(nullable = true),
+                    hasValueName)
+            function.addStatement("val %N = bundle.get(%S)", rawValueName, field.key)
+            function.beginControlFlow(
+                    "%N as? %T ?: when (%N)",
+                    rawValueName,
+                    valueType,
+                    rawValueName)
+            function.addStatement(
+                    "null -> throw %T(%S)",
+                    IllegalArgumentException::class,
+                    "Injected value for field [${field.name}] from key [${field.key}] was null")
+            function.addStatement(
+                    "is %T -> parseObject<%T>(%N, object : %T() {}.getType(), %S, %S)",
+                    String::class,
+                    valueType,
+                    rawValueName,
+                    token,
+                    field.key,
+                    field.name)
+            function.addStatement(
+                    "else -> throw %T(%S + %N.javaClass.name + %S)",
+                    IllegalArgumentException::class,
+                    "Injected value for field [${field.name}] from key [${field.key}] has incompatible type [",
+                    rawValueName,
+                    "]")
+            function.endControlFlow()
+            function.nextControlFlow("else")
+            function.addStatement(
+                    "%T.getProvider<%T>(%S)",
+                    tmKRouter.asTypeName(),
+                    valueType,
+                    field.key)
+            function.endControlFlow()
+        }
+
+        if (field.required) {
+            function.addStatement(
+                    "this.%N = %N ?: throw %T(%S)",
+                    field.name,
+                    resolvedName,
+                    NullPointerException::class,
+                    "Field [${field.name}] must not be null in an injected instance")
+        } else {
+            function.beginControlFlow("if (%N != null)", resolvedName)
+            function.addStatement("this.%N = %N", field.name, resolvedName)
+            function.endControlFlow()
         }
     }
 
@@ -476,23 +586,9 @@ class InjectProcessor : BaseProcessor() {
      * if true mean this class is java class
      */
     private fun isJavaFile(element: TypeElement): Boolean {
-        val tmMetadata = mElements.getTypeElement(METADATA).asType()
+        val tmMetadata = mElements.getTypeElement(METADATA)?.asType() ?: return true
         return element.annotationMirrors.find { it.annotationType == tmMetadata } == null
     }
-
-    private fun Element.asNonNullable(): String {
-        val tmNonNull = mElements.getTypeElement(NONNULL)?.asType()
-
-        return if (getAnnotation(NotNull::class.java) != null
-                || tmNonNull != null && this.annotationMirrors.any { it.annotationType == tmNonNull }) {
-            missingValueSuffix()
-        } else {
-            ""
-        }
-    }
-
-    private fun Element.missingValueSuffix(): String =
-            " ?: throw $NP_EXCEPTION(\"\"\"Field [$simpleName] must not be null in [${enclosingElement.simpleName}]!\"\"\")"
 
     /**
      * 获取需要把java类型映射成kotlin类型的ClassName  如：java.lang.String 在kotlin中的类型为kotlin.String 如果是空则表示该类型无需进行映射
@@ -522,12 +618,11 @@ class InjectProcessor : BaseProcessor() {
                         "            else -> {\n" +
                         "                null\n" +
                         "            }\n" +
-                        "        } ?: throw %T(%S)\n",
+                        "        } ?: %T()\n",
                         tmActivity.asTypeName(),
                         tmFragment.asTypeName(),
                         tmFragmentV4.asTypeName(),
-                        tmIllegalArgumentException.asTypeName(),
-                        "The field must be inject from bundle, the bundle can be passed from Activity or fragment or manually")
+                        tmBundle.asTypeName())
                 .build()
     }
 
@@ -539,16 +634,33 @@ class InjectProcessor : BaseProcessor() {
         return FunSpec.builder(METHOD_PARSE_OBJECT)
                 .addModifiers(KModifier.INTERNAL)
                 .addTypeVariable(TypeVariableName.invoke("T"))
-                .returns(TypeVariableName.invoke("T").copy(true))
-                .addParameter("text", String::class.asTypeName().copy(true))
+                .returns(TypeVariableName.invoke("T"))
+                .addParameter("text", String::class)
                 .addParameter("type", tmType.asTypeName())
-                .addStatement("val serializeProvider = %T.getProvider<%T>(%T) ?: throw %T(%S)",
+                .addParameter("key", String::class)
+                .addParameter("field", String::class)
+                .addStatement("val serializeProvider = %T.getProvider<%T>(%T) ?: throw %T(%S + field + %S + key + %S)",
                         tmKRouter.asTypeName(),
                         tmSerializeProvider.asTypeName(),
                         serializePathClassName,
-                        tmIllegalArgumentException.asTypeName(),
-                        "Missing $tmSerializeProvider, Do you declare a class that implements the $tmSerializeProvider interface?")
-                .addStatement("return serializeProvider.parseObject(text, type)")
+                        IllegalStateException::class,
+                        "Missing SerializationProvider while injecting field [",
+                        "] from key [",
+                        "]")
+                .beginControlFlow("val parsed = try")
+                .addStatement("serializeProvider.parseObject<T>(text, type)")
+                .nextControlFlow("catch (cause: %T)", Exception::class)
+                .addStatement("throw %T(%S + field + %S + key + %S, cause)",
+                        IllegalArgumentException::class,
+                        "Unable to parse injected field [",
+                        "] from key [",
+                        "]")
+                .endControlFlow()
+                .addStatement("return parsed ?: throw %T(%S + field + %S + key + %S)",
+                        IllegalArgumentException::class,
+                        "SerializationProvider returned null while injecting field [",
+                        "] from key [",
+                        "]")
                 .build()
 
     }

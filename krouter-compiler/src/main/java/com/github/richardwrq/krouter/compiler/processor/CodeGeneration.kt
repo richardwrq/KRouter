@@ -65,5 +65,20 @@ internal fun registerProviderKey(
     }
 }
 
+internal fun registerRoutePath(
+        routes: MutableMap<String, String>,
+        path: String,
+        routeClass: String
+) {
+    require(path.isNotBlank()) {
+        "Route path must not be blank: $routeClass"
+    }
+
+    val existingRoute = routes.putIfAbsent(path, routeClass)
+    require(existingRoute == null) {
+        "Duplicate route path '$path': $existingRoute and $routeClass"
+    }
+}
+
 internal fun providerAssignment(key: String, providerType: TypeName): CodeBlock =
         CodeBlock.of("map[%S] = %T::class.java", key, providerType)

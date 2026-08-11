@@ -65,7 +65,9 @@ annotation class Inject(
          */
         val name: String = "",
         /**
-         * If true, app will be throws NPE when value is null
+         * If true, a missing value or Provider throws [NullPointerException]. A key that is
+         * present with null or an incompatible value throws [IllegalArgumentException]
+         * regardless of this flag.
          */
         val isRequired: Boolean = false,
         /**
