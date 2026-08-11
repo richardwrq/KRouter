@@ -1,1 +1,19 @@
-include ':app', ':krouter-annotation', ':krouter-gradle-plugin', ':krouter-api', ':krouter-compiler', ':module-java', ':common'
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'KRouter'
+
+include ':app', ':krouter-annotation', ':krouter-api', ':krouter-compiler', ':module-java', ':common'

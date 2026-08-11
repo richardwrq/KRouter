@@ -371,7 +371,7 @@ class InjectProcessor : BaseProcessor() {
         val parseObjectFun = buildParseObjectFun()
 
         val extensionFileBuilder = FileSpec.builder(PACKAGE, "$INJECTOR_NAME$SEPARATOR$mFormatModuleName")
-                .addComment(WARNINGS)
+                .addFileComment(WARNINGS)
                 .addFunction(getBundleFun)
                 .addFunction(parseObjectFun)
 
@@ -380,7 +380,7 @@ class InjectProcessor : BaseProcessor() {
         categoryElement.forEach { parent, children ->
 
             val injectorFileBuilder = FileSpec.builder(parent.asClassName().packageName, transferInjectorClassName(parent.qualifiedName.toString()))
-                    .addComment(WARNINGS)
+                    .addFileComment(WARNINGS)
                     .addImport(PACKAGE, METHOD_PARSE_OBJECT, METHOD_GET_BUNDLE)
 
             val exInjectFun = FunSpec.builder(METHOD_EX_INJECT)
@@ -408,8 +408,13 @@ class InjectProcessor : BaseProcessor() {
                 }
 
                 mLogger.info("inject field [${element.simpleName}]")
+                val requiredValue = if (isJavaFile(parent)) {
+                    element.asNonNullable()
+                } else {
+                    element.missingValueSuffix()
+                }
                 if (mTypes.isSubtype(element.asType(), tmProvider)) {
-                    exInjectFun.addStatement("${element.simpleName} = (%T.getProvider<%T>(%S))${element.asNonNullable()}",
+                    exInjectFun.addStatement("${element.simpleName} = %T.getProvider<%T>(%S)$requiredValue",
                             tmKRouter.asTypeName(),
                             element.asType().asTypeName(),
                             key)
@@ -417,12 +422,13 @@ class InjectProcessor : BaseProcessor() {
                     //获取Java-》kotlin映射类型，如 java.lang.String转化为kotlin.String，如无需映射则直接返回element类型即可
                     val className = element.javaToKotlinType() ?: element.asType().asTypeName()
                     val token = ClassName.bestGuess(TYPE_TOKEN)
-                    exInjectFun.addStatement("${element.simpleName} = bundle.get(%S) as? %T ?: %T.getProvider<%T>(%S) ?: parseObject(bundle.getString(%S), object : %T() {}.getType())${element.asNonNullable()}",
+                    exInjectFun.addStatement("${element.simpleName} = bundle.get(%S) as? %T ?: %T.getProvider<%T>(%S) ?: parseObject<%T>(bundle.getString(%S), object : %T() {}.getType())$requiredValue",
                             key,
                             className,
                             tmKRouter.asTypeName(),
                             className,
                             key,
+                            className,
                             key,
                             token.parameterizedBy(className))
                 }
@@ -479,15 +485,18 @@ class InjectProcessor : BaseProcessor() {
     }
 
     private fun Element.asNonNullable(): String {
-        val tmNonNull = mElements.getTypeElement(NONNULL).asType()
+        val tmNonNull = mElements.getTypeElement(NONNULL)?.asType()
 
         return if (getAnnotation(NotNull::class.java) != null
-                || this.annotationMirrors.find { it.annotationType == tmNonNull } != null) {
-            " ?: throw $NP_EXCEPTION(\"\"\"Field [$simpleName] must not be null in [${enclosingElement.simpleName}]!\"\"\")"
+                || tmNonNull != null && this.annotationMirrors.any { it.annotationType == tmNonNull }) {
+            missingValueSuffix()
         } else {
             ""
         }
     }
+
+    private fun Element.missingValueSuffix(): String =
+            " ?: throw $NP_EXCEPTION(\"\"\"Field [$simpleName] must not be null in [${enclosingElement.simpleName}]!\"\"\")"
 
     /**
      * 获取需要把java类型映射成kotlin类型的ClassName  如：java.lang.String 在kotlin中的类型为kotlin.String 如果是空则表示该类型无需进行映射

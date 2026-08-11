@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-		  package="org.rc.wrq.module.java">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
 	<application>
-		<service android:name="com.github.richardwrq.module.java.MyService"/>
+		<service
+			android:name="com.github.richardwrq.module.java.MyService"
+			android:exported="false"/>
 		<service
 			android:name="com.github.richardwrq.module.java.BindService"
 			android:enabled="true"
-			android:exported="true">
+			android:exported="false">
 		</service>
 
 		<activity android:name="com.github.richardwrq.module.java.ResultActivity"
+			android:exported="false"
 			android:launchMode="standard">
 		</activity>
 	</application>

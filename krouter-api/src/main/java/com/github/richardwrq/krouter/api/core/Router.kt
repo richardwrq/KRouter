@@ -43,7 +43,7 @@ internal class Router private constructor() {
      * 加载路由表
      */
     private fun loadRouteTable() {
-        context.assets.list("").filter { it.startsWith("$PROJECT_NAME$SEPARATOR") }.forEach {
+        context.assets.list("")?.filter { it.startsWith("$PROJECT_NAME$SEPARATOR") }.orEmpty().forEach {
             val moduleName = transferModuleName(it)
             if (moduleName.isBlank()) {
                 return@forEach

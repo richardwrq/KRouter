@@ -1,13 +1,25 @@
-apply plugin: 'java-library'
-apply plugin: 'kotlin'
-
-dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation deps.kotlin.stdLibJre8
+plugins {
+    id 'java-library'
+    id 'org.jetbrains.kotlin.jvm'
 }
 
-sourceCompatibility = "1.7"
-targetCompatibility = "1.7"
-repositories {
-    mavenCentral()
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release.set(8)
+}
+
+kotlin {
+    jvmToolchain(17)
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+    }
+}
+
+dependencies {
+    testImplementation deps.junit
 }

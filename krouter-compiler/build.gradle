@@ -1,15 +1,32 @@
-apply plugin: 'kotlin'
-apply plugin: 'kotlin-kapt'
-apply plugin: 'java-library'
+plugins {
+    id 'java-library'
+    id 'org.jetbrains.kotlin.jvm'
+    id 'org.jetbrains.kotlin.kapt'
+}
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
 
+tasks.withType(JavaCompile).configureEach {
+    options.release.set(8)
+}
+
+kotlin {
+    jvmToolchain(17)
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+    }
+}
 
 dependencies {
-    implementation deps.auto.service
-    kapt deps.auto.service
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    compileOnly deps.auto.serviceAnnotations
+    kapt deps.auto.serviceProcessor
     implementation deps.kotlin.reflect
-    implementation deps.kotlin.stdLibJre8
     implementation deps.kotlinpoet
     api project(':krouter-annotation')
+
+    testImplementation deps.junit
 }

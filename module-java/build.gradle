@@ -1,65 +1,71 @@
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-kapt'
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.kapt'
+}
 
 kapt {
     arguments {
-        arg("moduleName", project.getName())
+        arg('moduleName', project.name)
     }
 }
 
-def krouterAssetsDir = file("$buildDir/generated/krouter/assets")
-def generateKRouterMarker = tasks.register("generateKRouterMarker") {
+def krouterAssetsDir = layout.buildDirectory.dir('generated/krouter/assets')
+def generateKRouterMarker = tasks.register('generateKRouterMarker') {
     outputs.dir(krouterAssetsDir)
     doLast {
-        krouterAssetsDir.mkdirs()
-        new File(krouterAssetsDir, "KRouter_${project.name}").createNewFile()
+        def outputDir = krouterAssetsDir.get().asFile
+        outputDir.mkdirs()
+        new File(outputDir, "KRouter_${project.name}").createNewFile()
     }
 }
 
 android {
-    compileSdkVersion versions.compileSdk
+    namespace = 'org.rc.wrq.module.java'
+    compileSdk = versions.compileSdk
 
     defaultConfig {
-        minSdkVersion versions.minSdk
-        targetSdkVersion versions.compileSdk
-        versionCode 1
-        versionName "1.0"
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
+        minSdk = versions.minSdk
+        testInstrumentationRunner = 'androidx.test.runner.AndroidJUnitRunner'
     }
 
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled = false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     sourceSets {
-        main {
-            assets.srcDir(krouterAssetsDir)
-        }
+        main.assets.srcDir(krouterAssetsDir)
     }
-
 }
 
-tasks.matching { it.name == "preBuild" }.all {
+kotlin {
+    jvmToolchain(17)
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+    }
+}
+
+tasks.named('preBuild') {
     dependsOn(generateKRouterMarker)
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-
     implementation deps.support.appcompat.v7
-    testImplementation deps.junit
-    androidTestImplementation deps.support.test.runner
-    androidTestImplementation deps.support.test.espresso.core
-
-    implementation deps.kotlin.stdLibJre8
     implementation project(':common')
     implementation project(':krouter-api')
     implementation project(':krouter-annotation')
     kapt project(':krouter-compiler')
+
+    testImplementation deps.junit
+    androidTestImplementation deps.support.test.runner
+    androidTestImplementation deps.support.test.junitExt
+    androidTestImplementation deps.support.test.espresso.core
 }

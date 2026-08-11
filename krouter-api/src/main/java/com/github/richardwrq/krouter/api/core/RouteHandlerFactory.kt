@@ -130,9 +130,10 @@ internal class ServiceHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(ro
         Logger.i("Handle Service..")
         val intent = Intent().setComponent(ComponentName(context, routeMetadata.clazz))
                 .putExtras(navigator.extras)
-        if (navigator.serviceConn != null) {
+        val serviceConnection = navigator.serviceConn
+        if (serviceConnection != null) {
             Logger.i("Bind Service")
-            context.bindService(intent, navigator.serviceConn, navigator.bindServiceFlags)
+            context.bindService(intent, serviceConnection, navigator.bindServiceFlags)
         } else {
             try {
                 context.startService(intent)

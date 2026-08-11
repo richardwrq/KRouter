@@ -104,7 +104,10 @@ object KRouter {
      * @return module名称列表
      */
     fun listAllModules(context: Context): List<String> {
-        return context.assets.list("").filter { it.startsWith("$PROJECT_NAME$SEPARATOR") }.map { transferModuleName(it) }
+        return context.assets.list("")
+                ?.filter { it.startsWith("$PROJECT_NAME$SEPARATOR") }
+                ?.map { transferModuleName(it) }
+                .orEmpty()
     }
 
     /**
@@ -203,7 +206,7 @@ object KRouter {
             private set
 
         internal constructor(uri: Uri) {
-            path = uri.path
+            path = requireNotNull(uri.path) { "Route URI must contain a path" }
             uri.queryParameterNames.forEach {
                 extras.putString(it, uri.getQueryParameter(it))
             }

@@ -40,7 +40,7 @@ const val NP_EXCEPTION = "$LANG.NullPointerException"
  * Annotation Type
  */
 const val METADATA = "kotlin.Metadata"
-const val NONNULL = "android.support.annotation.NonNull"
+const val NONNULL = "androidx.annotation.NonNull"
 
 const val KAPT_KOTLIN_GENERATED_OPTION_NAME = "kapt.kotlin.generated"
 
@@ -54,5 +54,4 @@ const val METHOD_EX_INJECT = "exInject"
 const val METHOD_INJECT = "inject"
 const val METHOD_GET_BUNDLE = "getBundle"
 const val METHOD_PARSE_OBJECT = "parseObject"
-
 

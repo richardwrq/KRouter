@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-		  package="com.github.richardwrq.krouter">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
 	<application
 		android:name=".BaseApplication"
@@ -10,7 +9,9 @@
 		android:roundIcon="@mipmap/ic_launcher_round"
 		android:supportsRtl="true"
 		android:theme="@style/AppTheme">
-		<activity android:name=".activity.MainActivity">
+		<activity
+			android:name=".activity.MainActivity"
+			android:exported="true">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN"/>
 
@@ -18,12 +19,17 @@
 			</intent-filter>
 		</activity>
 		<activity android:name=".activity.Main2Activity"
+			android:exported="false"
 			android:launchMode="standard">
 		</activity>
-		<activity android:name=".activity.Main3Activity">
+		<activity
+			android:name=".activity.Main3Activity"
+			android:exported="false">
 		</activity>
 
-		<activity android:name="com.github.richardwrq.krouter.api.activity.SchemeFilterActivity">
+		<activity
+			android:name="com.github.richardwrq.krouter.api.activity.SchemeFilterActivity"
+			android:exported="true">
 			<intent-filter>
 				<!-- 配置Scheme -->
 				<data
