@@ -1,0 +1,214 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android' version '2.3.21'
+    id 'org.jetbrains.kotlin.kapt' version '2.3.21'
+    id 'com.github.richardwrq.krouter' version '0.2.0-beta.1'
+}
+
+android {
+    namespace = 'fixture.consumer'
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = 'fixture.consumer'
+        minSdk = 21
+        targetSdk = 35
+        versionCode = 1
+        versionName = '1.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled = true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+}
+
+kotlin {
+    jvmToolchain(17)
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+    }
+}
+
+def krouterVersion = providers.gradleProperty('krouterVersion').getOrElse('0.2.0-beta.1')
+
+dependencies {
+    implementation "com.github.richardwrq:krouter-api:${krouterVersion}"
+    kapt "com.github.richardwrq:krouter-compiler:${krouterVersion}"
+}
+
+def injectionTarget = 'fixture.consumer.ConsumerTarget'
+def generatedInjector = "fixture.consumer.${injectionTarget.replace('.', '_')}_KRouter_Injector".toString()
+def generatedTypeToken = "${generatedInjector}\$exInject\$resolved0\$1".toString()
+def typeToken = 'com.github.richardwrq.krouter.api.utils.TypeToken'
+def injectedPayload = 'fixture.consumer.ConsumerPayload'
+
+def reflectionEntryPoints = [
+        'com.github.richardwrq.krouter.KRouter_RouteLoader_app',
+        'com.github.richardwrq.krouter.KRouter_ProviderLoader_app',
+        'com.github.richardwrq.krouter.KRouter_InterceptorLoader_external',
+        'com.github.richardwrq.krouter.KRouter_ProviderLoader_external',
+        generatedInjector,
+        injectionTarget
+]
+
+tasks.register('verifyConsumerRules') {
+    group = 'verification'
+    description = 'Checks KRouter reflection entry points and TypeToken signatures after R8.'
+    dependsOn 'assembleRelease'
+
+    def mapping = layout.buildDirectory.file('outputs/mapping/release/mapping.txt')
+    def releaseApk = layout.buildDirectory.file('outputs/apk/release/app-release-unsigned.apk')
+    inputs.file(mapping)
+    inputs.file(releaseApk)
+
+    doLast {
+        def mappingLines = mapping.get().asFile.readLines('UTF-8')
+        reflectionEntryPoints.each { className ->
+            def expected = "${className} -> ${className}:".toString()
+            if (!mappingLines.any { line -> line == expected }) {
+                throw new GradleException("Published consumer rules did not preserve ${className}")
+            }
+        }
+
+        def mappedClass = { String originalName ->
+            def prefix = "${originalName} -> ".toString()
+            def mappingLine = mappingLines.find {
+                it.startsWith(prefix) && it.endsWith(':')
+            }
+            if (mappingLine == null) {
+                throw new GradleException("R8 mapping is missing ${originalName}")
+            }
+            mappingLine.substring(prefix.length(), mappingLine.length() - 1)
+        }
+
+        def mappedTypeTokenSubclass = mappedClass(generatedTypeToken)
+        def mappedTypeToken = mappedClass(typeToken)
+        def mappedPayload = mappedClass(injectedPayload)
+        [mappedTypeTokenSubclass, mappedTypeToken, mappedPayload].each { className ->
+            if (className.startsWith('R8$$REMOVED$$CLASS$$')) {
+                throw new GradleException("R8 removed a type required by TypeToken: ${className}")
+            }
+        }
+
+        def dexFiles = []
+        new java.util.zip.ZipFile(releaseApk.get().asFile).withCloseable { archive ->
+            archive.entries().each { entry ->
+                if (!entry.directory && entry.name ==~ /classes\d*\.dex/) {
+                    def output = new File(temporaryDir, entry.name)
+                    archive.getInputStream(entry).withCloseable { input ->
+                        java.nio.file.Files.copy(
+                                input,
+                                output.toPath(),
+                                java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                    }
+                    dexFiles.add(output)
+                }
+            }
+        }
+        if (dexFiles.isEmpty()) {
+            throw new GradleException('Release APK contains no DEX files')
+        }
+
+        def windows = System.getProperty('os.name').toLowerCase(java.util.Locale.ROOT).contains('windows')
+        def dexdumpName = windows ? 'dexdump.exe' : 'dexdump'
+        def dexdump = androidComponents.sdkComponents.sdkDirectory.get()
+                .dir("build-tools/${android.buildToolsVersion}")
+                .file(dexdumpName).asFile
+        if (!dexdump.isFile()) {
+            throw new GradleException("Android SDK dexdump was not found at ${dexdump}")
+        }
+
+        def dexDump = dexFiles.collect { dexFile ->
+            def process = new ProcessBuilder(dexdump.absolutePath, '-a', dexFile.absolutePath)
+                    .redirectErrorStream(true)
+                    .start()
+            def output = process.inputStream.getText('UTF-8')
+            def exitCode = process.waitFor()
+            if (exitCode != 0) {
+                throw new GradleException(
+                        "dexdump failed for ${dexFile.name} with exit ${exitCode}:\n${output}")
+            }
+            output
+        }.join('\n')
+
+        def descriptor = { String className ->
+            "L${className.replace('.', '/')};".toString()
+        }
+        [generatedInjector, injectionTarget].each { className ->
+            if (!dexDump.contains("Class descriptor  : '${descriptor(className)}'")) {
+                throw new GradleException(
+                        "Shrunk DEX is missing reflection entry point ${className}")
+            }
+        }
+
+        def tokenSubclassDescriptor = descriptor(mappedTypeTokenSubclass)
+        def descriptorIndex = dexDump.indexOf(
+                "Class descriptor  : '${tokenSubclassDescriptor}'")
+        if (descriptorIndex < 0) {
+            throw new GradleException(
+                    "Shrunk DEX is missing TypeToken subclass ${mappedTypeTokenSubclass}")
+        }
+        def classHeaderIndex = dexDump.lastIndexOf('\nClass #', descriptorIndex)
+        def annotationsIndex = dexDump.lastIndexOf('\nClass #', classHeaderIndex - 1)
+        if (annotationsIndex < 0) {
+            throw new GradleException(
+                    "Shrunk TypeToken subclass ${mappedTypeTokenSubclass} has no annotations")
+        }
+        def annotationBlock = dexDump.substring(annotationsIndex, descriptorIndex)
+                .replaceAll(/[\s\"]/, '')
+        def expectedSignature = "L${mappedTypeToken.replace('.', '/')}<L${mappedPayload.replace('.', '/')};>;"
+        def signatureAnnotation =
+                "Ldalvik/annotation/Signature;value={${expectedSignature}}".toString()
+        if (!annotationBlock.contains(signatureAnnotation)) {
+            throw new GradleException(
+                    "Shrunk TypeToken subclass lost generic Signature ${expectedSignature}")
+        }
+    }
+}
+
+tasks.register('verifyPublishedApi') {
+    group = 'verification'
+    description = 'Compiles against published artifacts and verifies plugin and shrinker behavior.'
+    dependsOn 'compileDebugKotlin', 'mergeDebugAssets', tasks.named('verifyConsumerRules')
+
+    doLast {
+        def marker = layout.buildDirectory.file('generated/krouter/assets/debug/KRouter_app').get().asFile
+        if (!marker.isFile()) {
+            throw new GradleException('The published KRouter plugin did not generate its debug marker asset.')
+        }
+
+        def routeLoader = layout.buildDirectory.file(
+                'generated/source/kaptKotlin/debug/com/github/richardwrq/krouter/KRouter_RouteLoader_app.kt'
+        ).get().asFile
+        if (!routeLoader.isFile()) {
+            throw new GradleException('The published KRouter compiler did not generate its debug route loader.')
+        }
+
+        def injector = layout.buildDirectory.file(
+                "generated/source/kaptKotlin/debug/fixture/consumer/${generatedInjector.tokenize('.').last()}.kt"
+        ).get().asFile
+        if (!injector.isFile()) {
+            throw new GradleException('The published KRouter compiler did not generate its debug injector.')
+        }
+        if (!injector.getText('UTF-8').contains('TypeToken<ConsumerPayload>')) {
+            throw new GradleException(
+                    'The external fixture did not generate a custom-object TypeToken injection path.')
+        }
+
+        def providerLoader = layout.buildDirectory.file(
+                'generated/source/kaptKotlin/debug/com/github/richardwrq/krouter/KRouter_ProviderLoader_app.kt'
+        ).get().asFile
+        if (!providerLoader.isFile()) {
+            throw new GradleException(
+                    'The published KRouter compiler did not generate the serialization provider loader.')
+        }
+    }
+}

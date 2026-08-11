@@ -1,10 +1,21 @@
 pluginManagement {
     includeBuild('krouter-gradle-plugin')
 
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id in [
+                    'org.jetbrains.kotlin.android',
+                    'org.jetbrains.kotlin.jvm',
+                    'org.jetbrains.kotlin.kapt'
+            ] && requested.version != null) {
+                useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:${requested.version}")
+            }
+        }
+    }
+
     repositories {
         google()
         mavenCentral()
-        gradlePluginPortal()
     }
 }
 

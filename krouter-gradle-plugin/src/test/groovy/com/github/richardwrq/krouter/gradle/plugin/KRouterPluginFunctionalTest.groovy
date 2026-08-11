@@ -9,6 +9,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
@@ -35,12 +38,33 @@ class KRouterPluginFunctionalTest {
             localProperties.store(it, null)
         }
 
+        File verificationSource = new File(System.getProperty('krouterVerificationMetadata'))
+        assertTrue('Root dependency verification metadata is missing.', verificationSource.isFile())
+        File verificationTarget = new File(testProjectDir, 'gradle/verification-metadata.xml')
+        assertTrue(verificationTarget.parentFile.mkdirs() || verificationTarget.parentFile.isDirectory())
+        Files.copy(
+                verificationSource.toPath(),
+                verificationTarget.toPath(),
+                StandardCopyOption.REPLACE_EXISTING
+        )
+
         writeFile('settings.gradle', '''
             pluginManagement {
+                resolutionStrategy {
+                    eachPlugin {
+                        if (requested.id.id in [
+                                'org.jetbrains.kotlin.android',
+                                'org.jetbrains.kotlin.jvm',
+                                'org.jetbrains.kotlin.kapt'
+                        ] && requested.version != null) {
+                            useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:${requested.version}")
+                        }
+                    }
+                }
+
                 repositories {
                     google()
                     mavenCentral()
-                    gradlePluginPortal()
                 }
             }
 
@@ -54,6 +78,7 @@ class KRouterPluginFunctionalTest {
 
             rootProject.name = 'krouter-plugin-fixture'
             include ':app', ':probe-processor'
+            project(':app').name = providers.gradleProperty('fixtureModuleName').getOrElse('app')
         ''')
 
         writeFile('app/build.gradle', '''
@@ -180,8 +205,8 @@ class KRouterPluginFunctionalTest {
     }
 
     @Test
-    void 'wires kapt and generated assets while reusing the configuration cache'() {
-        BuildResult firstBuild = runBuild()
+    void 'wires kapt and replaces stale generated assets while reusing the configuration cache'() {
+        BuildResult firstBuild = runBuild('app')
 
         assertNotNull(firstBuild.task(':app:kaptDebugKotlin'))
         assertTrue(
@@ -208,21 +233,43 @@ class KRouterPluginFunctionalTest {
         assertFalse('The probe annotation processor did not produce its option file.', optionFiles.isEmpty())
         assertEquals(['app'] as Set, optionFiles.collect { it.getText('UTF-8') }.toSet())
 
-        BuildResult secondBuild = runBuild()
+        BuildResult secondBuild = runBuild('app')
 
         assertTrue(secondBuild.output.contains('Reusing configuration cache.'))
         assertTrue(
                 secondBuild.task(':app:generateDebugKRouterMarker').outcome in
                         [TaskOutcome.UP_TO_DATE, TaskOutcome.FROM_CACHE]
         )
+
+        BuildResult renamedBuild = runBuild('renamed-module')
+        assertTrue(
+                renamedBuild.task(':renamed-module:generateDebugKRouterMarker').outcome in
+                        [TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE]
+        )
+        assertFalse('The previous module marker must not survive a module rename.', marker.exists())
+
+        File renamedMarker = new File(
+                testProjectDir,
+                'app/build/generated/krouter/assets/debug/KRouter_renamedmodule'
+        )
+        assertTrue('The renamed KRouter marker asset is missing.', renamedMarker.isFile())
+
+        BuildResult renamedSecondBuild = runBuild('renamed-module')
+        assertTrue(renamedSecondBuild.output.contains('Reusing configuration cache.'))
+        assertTrue(
+                renamedSecondBuild.task(':renamed-module:generateDebugKRouterMarker').outcome in
+                        [TaskOutcome.UP_TO_DATE, TaskOutcome.FROM_CACHE]
+        )
     }
 
-    private BuildResult runBuild() {
+    private BuildResult runBuild(String moduleName) {
         List<String> arguments = [
-                ':app:kaptDebugKotlin',
-                ':app:mergeDebugAssets',
+                ":${moduleName}:kaptDebugKotlin".toString(),
+                ":${moduleName}:mergeDebugAssets".toString(),
+                "-PfixtureModuleName=${moduleName}".toString(),
                 '--configuration-cache',
                 '--configuration-cache-problems=fail',
+                '--dependency-verification=strict',
                 '--stacktrace'
         ]
 

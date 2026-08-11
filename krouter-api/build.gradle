@@ -10,6 +10,7 @@ android {
 
     defaultConfig {
         minSdk = versions.minSdk
+        consumerProguardFiles 'consumer-rules.pro'
     }
 
     buildTypes {
@@ -43,7 +44,7 @@ kotlin {
 }
 
 dependencies {
-    implementation project(':krouter-annotation')
+    api project(':krouter-annotation')
     api deps.support.fragment
 
     testImplementation deps.junit
@@ -51,9 +52,11 @@ dependencies {
 }
 
 tasks.withType(Test).configureEach {
-    providers.gradleProperty('krouterRobolectricRepository').orNull?.with { repositoryUrl ->
-        systemProperty 'robolectric.dependency.repo.url', repositoryUrl
-    }
+    dependsOn rootProject.tasks.named('prepareRobolectricRuntime')
+    systemProperty 'robolectric.offline', 'true'
+    systemProperty(
+            'robolectric.dependency.dir',
+            rootProject.layout.buildDirectory.dir('robolectric-runtime').get().asFile.absolutePath)
 }
 
 publishing {

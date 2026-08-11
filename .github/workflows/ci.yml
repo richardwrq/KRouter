@@ -59,3 +59,9 @@ jobs:
 
       - name: Build and verify
         run: ./gradlew --no-daemon --stacktrace clean check assembleDebug lint
+
+      - name: Publish and verify the isolated build repository
+        run: ./gradlew --no-daemon --stacktrace verifyPublicationLicenses
+
+      - name: Verify the published API from an external consumer
+        run: ./gradlew --no-daemon --stacktrace --dependency-verification strict -p integration-tests/external-consumer clean check

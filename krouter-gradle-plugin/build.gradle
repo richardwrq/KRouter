@@ -14,11 +14,30 @@ java {
     withSourcesJar()
 }
 
+tasks.withType(org.gradle.api.tasks.bundling.AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+    from(layout.projectDirectory.file('../LICENSE')) {
+        into 'META-INF'
+        rename { 'LICENSE' }
+    }
+}
+
 dependencies {
     implementation localGroovy()
 
     testImplementation gradleTestKit()
     testImplementation 'junit:junit:4.13.2'
+}
+
+def rootVerificationMetadata = layout.projectDirectory.file('../gradle/verification-metadata.xml')
+
+tasks.withType(Test).configureEach {
+    inputs.file(rootVerificationMetadata)
+    systemProperty(
+            'krouterVerificationMetadata',
+            rootVerificationMetadata.asFile.absolutePath
+    )
 }
 
 gradlePlugin {
@@ -33,6 +52,17 @@ gradlePlugin {
 }
 
 publishing {
+    publications.withType(MavenPublication).configureEach {
+        pom {
+            licenses {
+                license {
+                    name = 'Apache License, Version 2.0'
+                    url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                    distribution = 'repo'
+                }
+            }
+        }
+    }
     repositories {
         maven {
             name = 'buildRepository'

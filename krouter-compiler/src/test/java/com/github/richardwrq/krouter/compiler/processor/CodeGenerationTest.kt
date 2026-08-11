@@ -40,6 +40,21 @@ class CodeGenerationTest {
     }
 
     @Test
+    fun `route paths reject duplicates collected in later rounds`() {
+        val routes = linkedMapOf<String, String>()
+        registerRoutePath(routes, "/account/profile", "example.InitialRoute")
+
+        val duplicate = assertThrows(IllegalArgumentException::class.java) {
+            registerRoutePath(routes, "/account/profile", "example.GeneratedRoute")
+        }
+
+        assertEquals(
+                "Duplicate route path '/account/profile': example.InitialRoute and example.GeneratedRoute",
+                duplicate.message)
+        assertEquals("example.InitialRoute", routes["/account/profile"])
+    }
+
+    @Test
     fun `java collection types map recursively without compiler internals`() {
         val javaType = ClassName("java.util", "Map").parameterizedBy(
                 ClassName("java.lang", "String"),

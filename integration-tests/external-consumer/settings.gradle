@@ -1,0 +1,68 @@
+pluginManagement {
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id in [
+                    'org.jetbrains.kotlin.android',
+                    'org.jetbrains.kotlin.jvm',
+                    'org.jetbrains.kotlin.kapt'
+            ] && requested.version != null) {
+                useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:${requested.version}")
+            }
+        }
+    }
+
+    repositories {
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = 'krouterPluginBuildRepository'
+                    url = uri(file('../../build/repository'))
+                }
+            }
+            filter {
+                includeGroup('com.github.richardwrq')
+                includeGroup('com.github.richardwrq.krouter')
+            }
+        }
+        google()
+        def centralRepository = providers.gradleProperty('krouterCentralRepository').orNull
+        if (centralRepository == null) {
+            mavenCentral()
+        } else {
+            maven {
+                name = 'mavenCentralOverride'
+                url = uri(centralRepository)
+            }
+        }
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = 'krouterBuildRepository'
+                    url = uri(file('../../build/repository'))
+                }
+            }
+            filter {
+                includeGroup('com.github.richardwrq')
+            }
+        }
+        google()
+        def centralRepository = providers.gradleProperty('krouterCentralRepository').orNull
+        if (centralRepository == null) {
+            mavenCentral()
+        } else {
+            maven {
+                name = 'mavenCentralOverride'
+                url = uri(centralRepository)
+            }
+        }
+    }
+}
+
+rootProject.name = 'krouter-external-consumer'
+include ':app'

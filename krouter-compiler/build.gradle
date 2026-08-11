@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id 'java-test-fixtures'
     id 'maven-publish'
     id 'org.jetbrains.kotlin.jvm'
     id 'org.jetbrains.kotlin.kapt'
@@ -34,6 +35,13 @@ dependencies {
     api project(':krouter-annotation')
 
     testImplementation deps.junit
+}
+
+components.java.withVariantsFromConfiguration(configurations.testFixturesApiElements) {
+    skip()
+}
+components.java.withVariantsFromConfiguration(configurations.testFixturesRuntimeElements) {
+    skip()
 }
 
 publishing {

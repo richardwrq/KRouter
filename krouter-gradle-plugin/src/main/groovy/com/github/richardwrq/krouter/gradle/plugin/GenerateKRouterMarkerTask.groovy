@@ -10,8 +10,11 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
 import java.nio.file.Files
+import java.nio.file.FileVisitResult
 import java.nio.file.Path
+import java.nio.file.SimpleFileVisitor
 import java.nio.file.StandardOpenOption
+import java.nio.file.attribute.BasicFileAttributes
 
 @CacheableTask
 abstract class GenerateKRouterMarkerTask extends DefaultTask {
@@ -29,6 +32,7 @@ abstract class GenerateKRouterMarkerTask extends DefaultTask {
         }
 
         Path directory = outputDirectory.get().asFile.toPath()
+        cleanOutputDirectory(directory)
         Files.createDirectories(directory)
         Files.write(
                 directory.resolve("KRouter_${normalizedModuleName}"),
@@ -36,5 +40,28 @@ abstract class GenerateKRouterMarkerTask extends DefaultTask {
                 StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING
         )
+    }
+
+    private static void cleanOutputDirectory(Path directory) {
+        if (!Files.exists(directory)) {
+            return
+        }
+
+        Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+            @Override
+            FileVisitResult visitFile(Path file, BasicFileAttributes attributes) throws IOException {
+                Files.delete(file)
+                return FileVisitResult.CONTINUE
+            }
+
+            @Override
+            FileVisitResult postVisitDirectory(Path visitedDirectory, IOException failure) throws IOException {
+                if (failure != null) {
+                    throw failure
+                }
+                Files.delete(visitedDirectory)
+                return FileVisitResult.CONTINUE
+            }
+        })
     }
 }

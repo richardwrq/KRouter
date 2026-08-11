@@ -10,6 +10,27 @@ plugins {
 group = 'com.github.richardwrq'
 version = '0.2.0-beta.1'
 
+configurations {
+    robolectricRuntime {
+        canBeConsumed = false
+        canBeResolved = true
+        transitive = false
+    }
+}
+
+dependencies {
+    robolectricRuntime 'org.robolectric:android-all-instrumented:15-robolectric-12650502-i7'
+}
+
+def robolectricRuntimeDirectory = layout.buildDirectory.dir('robolectric-runtime')
+
+tasks.register('prepareRobolectricRuntime', Sync) {
+    group = 'verification'
+    description = 'Stages the dependency-verified Android runtime used by Robolectric tests.'
+    from configurations.robolectricRuntime
+    into robolectricRuntimeDirectory
+}
+
 ext.versions = [
         minSdk    : 21,
         compileSdk: 35,
@@ -37,8 +58,28 @@ subprojects {
     group = rootProject.group
     version = rootProject.version
 
+    tasks.withType(org.gradle.api.tasks.bundling.AbstractArchiveTask).configureEach {
+        preserveFileTimestamps = false
+        reproducibleFileOrder = true
+        from(rootProject.layout.projectDirectory.file('LICENSE')) {
+            into 'META-INF'
+            rename { 'LICENSE' }
+        }
+    }
+
     plugins.withId('maven-publish') {
         publishing {
+            publications.withType(MavenPublication).configureEach {
+                pom {
+                    licenses {
+                        license {
+                            name = 'Apache License, Version 2.0'
+                            url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                            distribution = 'repo'
+                        }
+                    }
+                }
+            }
             repositories {
                 maven {
                     name = 'buildRepository'
@@ -79,6 +120,64 @@ tasks.register('publishPluginToBuildRepository') {
     group = 'publishing'
     description = 'Publishes the standalone KRouter Gradle plugin to build/repository.'
     dependsOn krouterPluginBuild.task(':publish')
+}
+
+tasks.register('verifyPublicationLicenses') {
+    group = 'verification'
+    description = 'Verifies that every published archive and POM carries the Apache-2.0 license.'
+    dependsOn tasks.named('publishLibrariesToBuildRepository')
+    dependsOn tasks.named('publishPluginToBuildRepository')
+
+    doLast {
+        def repository = layout.buildDirectory.dir('repository').get().asFile
+        def publishedVersion = project.version.toString()
+        def licenseBytes = layout.projectDirectory.file('LICENSE').asFile.bytes
+        def archives = fileTree(repository).matching {
+            include "**/${publishedVersion}/*.aar"
+            include "**/${publishedVersion}/*.jar"
+        }.files.sort { first, second -> first.path <=> second.path }
+        if (archives.size() != 8) {
+            throw new GradleException(
+                    "Expected 8 published AAR/JAR archives for ${publishedVersion}, found ${archives.size()}")
+        }
+        archives.each { archive ->
+            new java.util.zip.ZipFile(archive).withCloseable { zip ->
+                def entries = java.util.Collections.list(zip.entries()).findAll {
+                    it.name == 'META-INF/LICENSE'
+                }
+                if (entries.size() != 1) {
+                    throw new GradleException(
+                            "${archive.name} must contain exactly one META-INF/LICENSE entry")
+                }
+                def packagedLicense = zip.getInputStream(entries[0]).withCloseable {
+                    it.bytes
+                }
+                if (!java.util.Arrays.equals(licenseBytes, packagedLicense)) {
+                    throw new GradleException(
+                            "${archive.name} contains a LICENSE that differs from the repository LICENSE")
+                }
+            }
+        }
+
+        def poms = fileTree(repository).matching {
+            include "**/${publishedVersion}/*.pom"
+        }.files.sort { first, second -> first.path <=> second.path }
+        if (poms.size() != 5) {
+            throw new GradleException(
+                    "Expected 5 published POMs for ${publishedVersion}, found ${poms.size()}")
+        }
+        poms.each { pom ->
+            def contents = pom.getText('UTF-8')
+            ['<name>Apache License, Version 2.0</name>',
+             '<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>',
+             '<distribution>repo</distribution>'].each { requiredText ->
+                if (!contents.contains(requiredText)) {
+                    throw new GradleException(
+                            "${pom.name} is missing Maven license metadata: ${requiredText}")
+                }
+            }
+        }
+    }
 }
 
 tasks.named('check') {
