@@ -23,6 +23,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+
+    testOptions {
+        unitTests.includeAndroidResources = true
+    }
 }
 
 kotlin {
@@ -37,7 +41,14 @@ dependencies {
     api deps.support.fragment
 
     testImplementation deps.junit
+    testImplementation 'org.robolectric:robolectric:4.14.1'
     androidTestImplementation deps.support.test.runner
     androidTestImplementation deps.support.test.junitExt
     androidTestImplementation deps.support.test.espresso.core
+}
+
+tasks.withType(Test).configureEach {
+    providers.gradleProperty('krouterRobolectricRepository').orNull?.with { repositoryUrl ->
+        systemProperty 'robolectric.dependency.repo.url', repositoryUrl
+    }
 }

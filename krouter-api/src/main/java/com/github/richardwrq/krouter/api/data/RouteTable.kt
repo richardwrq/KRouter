@@ -28,6 +28,7 @@ internal object RouteTable {
         injectors.clear()
         interceptors.clear()
         matchers.clear()
+        matchers.add(DefaultMatcher)
     }
 }
 

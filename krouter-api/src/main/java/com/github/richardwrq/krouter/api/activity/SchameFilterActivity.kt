@@ -16,9 +16,10 @@ class SchemeFilterActivity: Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        intent.data?.let { uri ->
-            KRouter.create(uri).request()
+        try {
+            KRouter.handleExternalIntent(this, intent)
+        } finally {
+            finish()
         }
-        finish()
     }
 }

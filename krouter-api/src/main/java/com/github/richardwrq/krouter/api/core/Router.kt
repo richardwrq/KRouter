@@ -1,5 +1,6 @@
 package com.github.richardwrq.krouter.api.core
 
+import android.app.Activity
 import android.app.Application
 import android.app.Fragment
 import android.content.Context
@@ -77,7 +78,37 @@ internal class Router private constructor() {
             navigator.routeFailedCallback?.invoke(navigator, "")
             return null
         }
-        val handlers = createRouteHandler(map)
+        return routeHandlers(navigator, createRouteHandler(map))
+    }
+
+    /**
+     * Resolves a route by its exact table key. Custom matchers are deliberately
+     * excluded from the external deep-link trust boundary.
+     */
+    internal fun resolveExactActivity(path: String): RouteMetadata? {
+        val metadata = RouteTable.routes[path] ?: return null
+        return metadata.takeIf {
+            it.path == path &&
+                    it.routeType == RouteType.ACTIVITY &&
+                    Activity::class.java.isAssignableFrom(it.clazz)
+        }
+    }
+
+    /** Routes one Activity captured by the frozen external policy. */
+    internal fun routeExactActivity(
+            navigator: KRouter.Navigator,
+            routeMetadata: RouteMetadata): Any? {
+        check(routeMetadata.path == navigator.path &&
+                routeMetadata.routeType == RouteType.ACTIVITY &&
+                Activity::class.java.isAssignableFrom(routeMetadata.clazz)) {
+            "External route is not an exact Activity route"
+        }
+        return routeHandlers(navigator, listOf(createHandler(routeMetadata)))
+    }
+
+    private fun routeHandlers(
+            navigator: KRouter.Navigator,
+            handlers: List<AbsRouteHandler>): Any? {
         Logger.i("Found ${handlers.size} target for ${navigator.path}")
         val isIntercept = isIntercept(navigator)
         handlers.forEach {

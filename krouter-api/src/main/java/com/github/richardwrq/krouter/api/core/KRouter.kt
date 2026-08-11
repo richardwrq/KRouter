@@ -5,6 +5,7 @@ import android.app.Activity
 import android.app.Fragment
 import android.content.Context
 import android.content.Context.*
+import android.content.Intent
 import android.content.Intent.*
 import android.content.ServiceConnection
 import android.net.Uri
@@ -34,11 +35,57 @@ import java.util.*
  */
 object KRouter {
 
+    @Volatile
+    private var boundExternalDeepLinkPolicy: BoundExternalDeepLinkPolicy? = null
+    private var configuredExternalDeepLinkPolicy: ExternalDeepLinkPolicy? = null
+    private var initializedContext: Context? = null
+
     @JvmStatic
     @Synchronized
     fun init(context: Context) {
+        init(context, ExternalDeepLinkPolicy.denyAll())
+    }
 
-        Router.init(context)
+    /**
+     * Initializes KRouter and permanently binds an external deep-link policy
+     * to the exact Activity metadata present at initialization time.
+     */
+    @JvmStatic
+    @Synchronized
+    fun init(context: Context, externalDeepLinkPolicy: ExternalDeepLinkPolicy) {
+        val applicationContext = context as? android.app.Application
+                ?: context.applicationContext
+                ?: context
+        if (boundExternalDeepLinkPolicy != null) {
+            check(initializedContext === applicationContext &&
+                    configuredExternalDeepLinkPolicy == externalDeepLinkPolicy) {
+                "KRouter is already initialized; the external deep-link policy is frozen"
+            }
+            return
+        }
+
+        Router.init(applicationContext)
+        val boundPolicy = BoundExternalDeepLinkPolicy.bind(externalDeepLinkPolicy) { path ->
+            Router.getInstance().resolveExactActivity(path)
+        }
+        configuredExternalDeepLinkPolicy = externalDeepLinkPolicy
+        initializedContext = applicationContext
+        boundExternalDeepLinkPolicy = boundPolicy
+    }
+
+    /**
+     * Validates and dispatches an intent received by an exported entry point.
+     * Incoming extras, flags, ClipData, selector and component are ignored.
+     *
+     * @return true when the URI was admitted by the frozen policy. An existing
+     * route interceptor may still prevent the target Activity from starting.
+     */
+    @JvmStatic
+    fun handleExternalIntent(context: Context, intent: Intent): Boolean {
+        val match = boundExternalDeepLinkPolicy?.match(intent) ?: return false
+        val navigator = Navigator(match.path, match.extras).useContext(context)
+        Router.getInstance().routeExactActivity(navigator, match.routeMetadata)
+        return true
     }
 
     /**
@@ -218,6 +265,16 @@ object KRouter {
                 extras.putString(it, uri.getQueryParameter(it))
             }
             this.path = path
+        }
+
+        internal constructor(path: String, extras: Bundle) {
+            this.path = path
+            this.extras.putAll(extras)
+        }
+
+        internal fun useContext(context: Context): Navigator {
+            this.context = context
+            return this
         }
 
         fun withInt(key: String?, int: Int): Navigator {
@@ -521,6 +578,14 @@ object KRouter {
             this.context = context
             return Router.getInstance().route(this)
         }
+    }
+
+    @Synchronized
+    internal fun resetForTests() {
+        boundExternalDeepLinkPolicy = null
+        configuredExternalDeepLinkPolicy = null
+        initializedContext = null
+        RouteTable.clear()
     }
 
 }

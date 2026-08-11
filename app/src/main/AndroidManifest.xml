@@ -31,9 +31,10 @@
 			android:name="com.github.richardwrq.krouter.api.activity.SchemeFilterActivity"
 			android:exported="true">
 			<intent-filter>
-				<!-- 配置Scheme -->
+				<!-- The runtime allowlist remains authoritative for explicit intents. -->
 				<data
 					android:host="wrq.richard.com"
+					android:path="/krouter/sample/Main3Activity"
 					android:scheme="krouter"/>
 
 				<action android:name="android.intent.action.VIEW"/>
