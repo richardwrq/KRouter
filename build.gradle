@@ -59,11 +59,13 @@ tasks.register('pluginCheck') {
     dependsOn krouterPluginBuild.task(':check')
 }
 
+tasks.register('pluginClean') {
+    group = 'build'
+    description = 'Cleans outputs from the standalone KRouter Gradle plugin build.'
+    dependsOn krouterPluginBuild.task(':clean')
+}
+
 tasks.named('check') {
     dependsOn tasks.named('pluginCheck')
     dependsOn subprojects.collect { "${it.path}:check" }
-}
-
-tasks.named('clean') {
-    dependsOn krouterPluginBuild.task(':clean')
 }
