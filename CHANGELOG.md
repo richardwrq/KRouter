@@ -25,6 +25,7 @@ This is a source-only revival target. No `0.2.0-beta.1` artifact or GitHub Relea
 ### Security
 
 - Removed mutable remote Gradle scripts and retired JCenter/Bintray build and publication configuration.
+- Added SHA-256 verification metadata for the complete Gradle dependency and plugin graph.
 - Escaped generated provider keys and rejected blank or duplicate keys during annotation processing.
 - Declared Android component export state explicitly for the modern Android manifest model.
 - Made external deep links deny-all by default and added an immutable exact URI/Activity allowlist.
