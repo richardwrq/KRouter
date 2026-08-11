@@ -2,7 +2,7 @@
 
 KRouter 是一个面向 Android 的注解驱动路由框架，支持 Activity、Service、Fragment、拦截器、Provider 和字段注入，也支持 Java/Kotlin 混合工程。
 
-> **Revival beta:** 当前仓库正在恢复维护，目标版本为 `0.2.0-beta.1`。源码已迁移到现代 Android/Gradle 工具链，但 API 与二进制兼容性尚未稳定，也没有可供生产使用的维护版 Maven 制品。历史 Bintray/JCenter 下载方式已经失效，请勿继续使用旧坐标。
+> **Revival beta:** 当前维护线为 `0.2.0-beta.1`。源码已迁移到现代 Android/Gradle 工具链，但 API 与二进制兼容性尚未稳定，也没有可供生产使用的稳定 Maven 制品。GitHub prerelease 附件仅用于源码评估和兼容性测试；历史 Bintray/JCenter 下载方式已经失效，请勿继续使用旧坐标。
 
 ## 当前能力
 
@@ -60,7 +60,7 @@ dependencies {
 ./gradlew --no-daemon publishLibrariesToBuildRepository publishPluginToBuildRepository
 ```
 
-`clean` 必须作为单独一次 Gradle 调用先完成，以免和 included plugin build 的 publication 任务竞争。上述任务不需要凭证，不写入 Maven Local，也不会上传到远端；`build/repository/` 中的 `0.2.0-SNAPSHOT` 仅用于检查当前源码产物，不是公共发布。
+`clean` 必须作为单独一次 Gradle 调用先完成，以免和 included plugin build 的 publication 任务竞争。上述任务不需要凭证，不写入 Maven Local，也不会上传到远端；`build/repository/` 中的 `0.2.0-beta.1` 仅用于检查当前源码产物，不是公共 Maven 发布。
 
 ## 基本用法
 

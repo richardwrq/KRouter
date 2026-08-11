@@ -2,9 +2,9 @@
 
 This file records maintained changes to KRouter. The pre-revival history remains available in Git.
 
-## [0.2.0-beta.1] - Unreleased
+## [0.2.0-beta.1] - 2026-08-12
 
-This is a source-only revival target. No `0.2.0-beta.1` artifact or GitHub Release has been published.
+This prerelease revives source builds and local publication checks. GitHub release attachments are provided for evaluation, but no public Maven repository or production-stable artifact is available.
 
 ### Added
 
