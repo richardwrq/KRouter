@@ -2,7 +2,7 @@
 
 KRouter 是一个面向 Android 的注解驱动路由框架，支持 Activity、Service、Fragment、拦截器、Provider 和字段注入，也支持 Java/Kotlin 混合工程。
 
-> **Revival beta:** 当前维护线为 `0.2.0-beta.1`。源码已迁移到现代 Android/Gradle 工具链，但 API 与二进制兼容性尚未稳定，也没有可供生产使用的稳定 Maven 制品。GitHub prerelease 附件仅用于源码评估和兼容性测试；历史 Bintray/JCenter 下载方式已经失效，请勿继续使用旧坐标。
+> **Revival beta:** 当前维护线为 `0.2.0-beta.1`。源码已迁移到现代 Android/Gradle 工具链，但 API 与二进制兼容性尚未稳定，也没有可供生产使用的稳定 Maven 制品。若提供 GitHub prerelease 附件，它们仅用于源码评估和兼容性测试；历史 Bintray/JCenter 下载方式已经失效，请勿继续使用旧坐标。
 
 ## 当前能力
 
@@ -96,6 +96,7 @@ val externalDeepLinks = ExternalDeepLinkPolicy.builder()
         "krouter",
         "wrq.richard.com",
         "/krouter/sample/Main3Activity",
+        Main3Activity::class.java,
         "id"
     )
     .build()
@@ -108,6 +109,7 @@ Manifest 过滤器也应保持同样的精确边界：
 ```xml
 <activity
     android:name="com.github.richardwrq.krouter.api.activity.SchemeFilterActivity"
+    android:enabled="true"
     android:exported="true">
     <intent-filter>
         <action android:name="android.intent.action.VIEW" />
@@ -121,7 +123,7 @@ Manifest 过滤器也应保持同样的精确边界：
 </activity>
 ```
 
-未列出的 query key、重复 key、端口、userinfo、fragment、非规范化 path 和非 `ACTION_VIEW` Intent 会被拒绝。传入 Intent 的 extras、flags、selector 和 component 不会跨越该边界。allowlist 中的 path 必须在初始化时精确解析为 Activity；自定义模糊匹配器不能扩大外部入口。
+目标 Activity 也必须在合并 Manifest 中显式启用并保持 `android:exported="false"`。未列出的 query key、重复 key、端口、userinfo、fragment、非规范化 path 和非 `ACTION_VIEW` Intent 会被拒绝；ClipData 和 selector 同样会被拒绝。传入 Intent 的 extras 与 flags 不会跨越该边界，component 只能为空或指向当前应用的 `SchemeFilterActivity`。allowlist 中的 path 与声明的 Activity 必须在初始化时精确对应；自定义模糊匹配器不能扩大外部入口。
 
 ### 发起请求
 
@@ -167,10 +169,10 @@ Provider key 不得为空或重复。key 会进入编译期生成代码，因此
 
 ```kotlin
 class Main2Activity : AppCompatActivity() {
-    @Inject("person")
+    @Inject(name = "person", isRequired = true)
     lateinit var person: Person
 
-    @Inject("provider/my-provider")
+    @Inject(name = "provider/my-provider", isRequired = true)
     lateinit var provider: MyProvider
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -179,6 +181,10 @@ class Main2Activity : AppCompatActivity() {
     }
 }
 ```
+
+`isRequired = true` 会在值或 Provider 缺失时立即抛出异常。默认的可选注入只在 key 确实不存在且没有对应 Provider 时保留初始值，因此可选字段应提供初始值；不要把未初始化的 `lateinit` 字段当作可选字段。若 Bundle 已包含 key，空值、类型不匹配、缺少 `SerializationProvider` 或反序列化失败都会抛出带字段和 key 上下文的异常，不会被当作“未提供”。
+
+运行时只会把以 `KRouter_` 开头的 asset 当作模块 marker；`transferModuleName` 对其他输入会抛出 `IllegalArgumentException`，避免把任意文件名误识别为生成表。
 
 ### 声明拦截器
 
@@ -195,16 +201,13 @@ class AuthenticationInterceptor : IRouteInterceptor {
 
 ### 自定义对象序列化
 
-使用 `SerializationProvider` 注册对象序列化实现，并在请求中通过 `withObject` 传入对象。序列化实现负责处理不可信输入、类型限制和解析失败；不要反序列化来源不明的任意类型。
+使用 `SerializationProvider` 注册对象序列化实现，并在请求中通过 `withObject` 传入对象。序列化实现负责处理不可信输入、类型限制和解析失败；不要反序列化来源不明的任意类型。解析器抛出的异常会作为 cause 保留，便于定位具体失败，而不是静默回退到字段默认值。
 
 ## 混淆规则
 
-```proguard
--keep class com.github.richardwrq.krouter.** { *; }
--keep class * implements com.github.richardwrq.krouter.api.interfaces.IInjector { *; }
-```
+`krouter-api` AAR 已内置最小 consumer rules，用于保留运行时反射加载的路由表、Provider 表、拦截器表、Injector 及其目标类名，并保留自定义对象注入所需的 `TypeToken<T>` 泛型签名；不需要再对整个 `com.github.richardwrq.krouter` 包添加 broad keep。
 
-如果在非 Android 组件类中使用字段注入，还需要保留相应的目标类。
+如果应用还通过 KRouter 之外的自定义反射机制访问类型或成员，仍需为那部分反射契约单独提供精确规则。
 
 ## 参与维护
 
@@ -215,3 +218,4 @@ class AuthenticationInterceptor : IRouteInterceptor {
 ## License
 
 KRouter is licensed under the [Apache License 2.0](LICENSE).
+Published AAR/JAR archives also carry `META-INF/LICENSE`, and generated Maven POMs declare the same license.

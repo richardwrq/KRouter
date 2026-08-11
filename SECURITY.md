@@ -7,6 +7,7 @@ KRouter is currently undergoing maintenance and revival. No currently published 
 | Version or source | Status |
 | --- | --- |
 | Current default branch | Under maintenance; reports accepted |
+| 0.2.0-beta.1 source/tag | Evaluation prerelease; reports accepted; no stability or response-time guarantee |
 | Historical Bintray/JCenter artifacts | Unsupported |
 
 ## Reporting a vulnerability

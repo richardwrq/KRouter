@@ -1,10 +1,10 @@
 # Contributing to KRouter
 
-Thank you for helping maintain KRouter. The repository is being revived after a period of limited activity. Historical releases were distributed through Bintray/JCenter, which are no longer active distribution channels. Until the maintainers publish and tag a new release, the current repository should be treated as source under maintenance, not as a supported public artifact.
+Thank you for helping maintain KRouter. The repository is being revived after a period of limited activity. Historical releases were distributed through Bintray/JCenter, which are no longer active distribution channels. The current revival beta and any GitHub prerelease attachments are intended for source evaluation and compatibility testing; no public Maven artifact is declared production-stable.
 
 ## Development baseline
 
-The modernization target is:
+The maintained development baseline is:
 
 - JDK 17
 - Android SDK Platform 35
@@ -16,14 +16,13 @@ Confirm that Gradle is using the intended JDK before diagnosing build failures:
 ./gradlew --version
 ```
 
-The intended verification commands are:
+The primary verification command is:
 
 ```shell
-./gradlew clean check
-./gradlew :app:assembleDebug :module-java:assembleDebug
+./gradlew --no-daemon clean check assembleDebug lint
 ```
 
-These commands describe the target maintenance baseline. If the branch you are using is still partway through the revival work, report any failure with the exact commit, command, JDK version, Android SDK details, and relevant error output.
+Report any failure with the exact commit, command, JDK version, Android SDK details, operating system, and relevant error output.
 
 ## Making a change
 
