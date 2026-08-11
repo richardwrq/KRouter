@@ -30,7 +30,7 @@ ext.deps = [
         ],
         kotlinpoet: 'com.squareup:kotlinpoet:1.18.1',
         junit     : 'junit:junit:4.13.2',
-        gson      : 'com.google.code.gson:gson:2.13.2'
+        gson      : 'com.google.code.gson:gson:2.14.0'
 ]
 
 subprojects {
