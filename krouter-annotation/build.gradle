@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id 'maven-publish'
     id 'org.jetbrains.kotlin.jvm'
 }
 
@@ -7,6 +8,7 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
+    withSourcesJar()
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -22,4 +24,13 @@ kotlin {
 
 dependencies {
     testImplementation deps.junit
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'krouter-annotation'
+            from components.java
+        }
+    }
 }

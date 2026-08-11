@@ -43,6 +43,17 @@ ext.deps = [
 subprojects {
     group = rootProject.group
     version = rootProject.version
+
+    plugins.withId('maven-publish') {
+        publishing {
+            repositories {
+                maven {
+                    name = 'buildRepository'
+                    url = rootProject.layout.buildDirectory.dir('repository')
+                }
+            }
+        }
+    }
 }
 
 def krouterPluginBuild = gradle.includedBuild('krouter-gradle-plugin')
@@ -63,6 +74,18 @@ tasks.register('pluginClean') {
     group = 'build'
     description = 'Cleans outputs from the standalone KRouter Gradle plugin build.'
     dependsOn krouterPluginBuild.task(':clean')
+}
+
+tasks.register('publishLibrariesToBuildRepository') {
+    group = 'publishing'
+    description = 'Publishes KRouter libraries to build/repository without credentials.'
+    dependsOn ':krouter-annotation:publish', ':krouter-compiler:publish', ':krouter-api:publish'
+}
+
+tasks.register('publishPluginToBuildRepository') {
+    group = 'publishing'
+    description = 'Publishes the standalone KRouter Gradle plugin to build/repository.'
+    dependsOn krouterPluginBuild.task(':publish')
 }
 
 tasks.named('check') {

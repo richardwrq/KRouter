@@ -1,6 +1,7 @@
 plugins {
     id 'groovy'
     id 'java-gradle-plugin'
+    id 'maven-publish'
 }
 
 group = 'com.github.richardwrq'
@@ -10,6 +11,7 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
+    withSourcesJar()
 }
 
 dependencies {
@@ -26,6 +28,15 @@ gradlePlugin {
             implementationClass = 'com.github.richardwrq.krouter.gradle.plugin.KRouterPlugin'
             displayName = 'KRouter Android plugin'
             description = 'Configures KRouter annotation processing and generated module marker assets.'
+        }
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = 'buildRepository'
+            url = layout.projectDirectory.dir('../build/repository')
         }
     }
 }
