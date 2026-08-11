@@ -15,7 +15,6 @@ android {
         targetSdk = versions.targetSdk
         versionCode = 1
         versionName = '1.0'
-        testInstrumentationRunner = 'androidx.test.runner.AndroidJUnitRunner'
     }
 
     buildTypes {
@@ -57,8 +56,4 @@ dependencies {
     implementation project(':krouter-annotation')
     kapt project(':krouter-compiler')
 
-    testImplementation deps.junit
-    androidTestImplementation deps.support.test.runner
-    androidTestImplementation deps.support.test.junitExt
-    androidTestImplementation deps.support.test.espresso.core
 }

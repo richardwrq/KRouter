@@ -10,7 +10,6 @@ android {
 
     defaultConfig {
         minSdk = versions.minSdk
-        testInstrumentationRunner = 'androidx.test.runner.AndroidJUnitRunner'
     }
 
     buildTypes {
@@ -49,9 +48,6 @@ dependencies {
 
     testImplementation deps.junit
     testImplementation 'org.robolectric:robolectric:4.14.1'
-    androidTestImplementation deps.support.test.runner
-    androidTestImplementation deps.support.test.junitExt
-    androidTestImplementation deps.support.test.espresso.core
 }
 
 tasks.withType(Test).configureEach {

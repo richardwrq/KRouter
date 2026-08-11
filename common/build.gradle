@@ -8,7 +8,6 @@ android {
 
     defaultConfig {
         minSdk = versions.minSdk
-        testInstrumentationRunner = 'androidx.test.runner.AndroidJUnitRunner'
     }
 
     buildTypes {
@@ -22,11 +21,4 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-}
-
-dependencies {
-    testImplementation deps.junit
-    androidTestImplementation deps.support.test.runner
-    androidTestImplementation deps.support.test.junitExt
-    androidTestImplementation deps.support.test.espresso.core
 }
