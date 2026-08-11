@@ -1,0 +1,41 @@
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.kapt'
+}
+
+kapt {
+    includeCompileClasspath = false
+    arguments {
+        arg('moduleName', 'compiler-integration-test')
+    }
+}
+
+android {
+    namespace = 'com.github.richardwrq.krouter.compiler.integration'
+    compileSdk = versions.compileSdk
+
+    defaultConfig {
+        minSdk = versions.minSdk
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+}
+
+kotlin {
+    jvmToolchain(17)
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+    }
+}
+
+dependencies {
+    implementation project(':krouter-api')
+    implementation project(':krouter-annotation')
+    kapt project(':krouter-compiler')
+
+    testImplementation deps.junit
+}

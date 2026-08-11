@@ -21,10 +21,13 @@ kotlin {
     }
 }
 
+kapt {
+    includeCompileClasspath = false
+}
+
 dependencies {
     compileOnly deps.auto.serviceAnnotations
     kapt deps.auto.serviceProcessor
-    implementation deps.kotlin.reflect
     implementation deps.kotlinpoet
     api project(':krouter-annotation')
 

@@ -20,8 +20,6 @@ import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 import kotlin.collections.HashMap
-import kotlin.reflect.jvm.internal.impl.name.FqName
-import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 
 
@@ -39,11 +37,8 @@ abstract class BaseProcessor : AbstractProcessor() {
         mTypes = p0.typeUtils
         mLogger = Logger(p0.messager)
 
-        val options = p0.options
-        if (options.isNotEmpty()) {
-            mOriginalModuleName = options[MODULE_NAME] ?: ""
-            mFormatModuleName = mOriginalModuleName.replace("[^0-9a-zA-Z_]+".toRegex(), "")
-        }
+        mOriginalModuleName = p0.options[MODULE_NAME].orEmpty()
+        mFormatModuleName = mOriginalModuleName.replace("[^0-9a-zA-Z_]+".toRegex(), "")
         mLogger.info("[$mOriginalModuleName] ${this::class.java.simpleName} init")
     }
 
@@ -298,13 +293,14 @@ class ProviderProcessor : BaseProcessor() {
                 .addParameter("map", mapTypeOfProviderLoader)
                 .addModifiers(KModifier.OVERRIDE)
 
-        elements.forEach {
+        elements.sortedBy { it.asType().toString() }.forEach {
             val providerAnn = it.getAnnotation(Provider::class.java)
+
+            registerProviderKey(providerMap, providerAnn.value, it.asType().toString())
 
             mLogger.info("Found Provider ${it.asType()} in [$mOriginalModuleName]")
 //            if (mTypes.isSubtype(it.asType(), tmProvider)) {
-            providerLoaderFun.addStatement(
-                    "map[\"${providerAnn.value}\"] = %T::class.java", it.asType())
+            providerLoaderFun.addCode("%L\n", providerAssignment(providerAnn.value, it.asType().asTypeName()))
 //            } else {
 //                mLogger.warning("Provider ${it.simpleName} does not impl IProvider")
 //                return@forEach
@@ -420,7 +416,7 @@ class InjectProcessor : BaseProcessor() {
                             key)
                 } else {
                     //获取Java-》kotlin映射类型，如 java.lang.String转化为kotlin.String，如无需映射则直接返回element类型即可
-                    val className = element.javaToKotlinType() ?: element.asType().asTypeName()
+                    val className = element.javaToKotlinType()
                     val token = ClassName.bestGuess(TYPE_TOKEN)
                     exInjectFun.addStatement("${element.simpleName} = bundle.get(%S) as? %T ?: %T.getProvider<%T>(%S) ?: parseObject<%T>(bundle.getString(%S), object : %T() {}.getType())$requiredValue",
                             key,
@@ -502,58 +498,7 @@ class InjectProcessor : BaseProcessor() {
      * 获取需要把java类型映射成kotlin类型的ClassName  如：java.lang.String 在kotlin中的类型为kotlin.String 如果是空则表示该类型无需进行映射
      */
     private fun Element.javaToKotlinType(): TypeName =
-            asType().asTypeName().javaToKotlinType()
-
-//    private fun TypeName.javaToKotlinType(): TypeName {
-//        return if (this is ParameterizedTypeName) {
-//            ParameterizedTypeName.get(
-//                    rawType.javaToKotlinType() as ClassName,
-//                    *typeArguments.map { it.javaToKotlinType() }.toTypedArray()
-//            )
-//        } else {
-//            val className =
-//                    JavaToKotlinClassMap.INSTANCE.mapJavaToKotlin(FqName(toString()))
-//                            ?.asSingleFqName()?.asString()
-//
-//            return if (className == null) {
-//                this
-//            } else {
-//                ClassName.bestGuess(className)
-//            }
-//        }
-//    }
-
-    private fun TypeName.javaToKotlinType(): TypeName {
-
-        return when (this) {
-            is ParameterizedTypeName -> {
-                (rawType.javaToKotlinType() as ClassName).parameterizedBy(
-                        *typeArguments.map {
-                            it.javaToKotlinType()
-                        }.toTypedArray()
-                )
-            }
-            is WildcardTypeName -> {
-                val type =
-                        if (inTypes.isNotEmpty()) WildcardTypeName.consumerOf(inTypes[0].javaToKotlinType())
-                        else WildcardTypeName.producerOf(outTypes[0].javaToKotlinType())
-
-                type
-            }
-
-            else -> {
-                val className = JavaToKotlinClassMap.INSTANCE
-                        .mapJavaToKotlin(FqName(toString()))?.asSingleFqName()?.asString()
-                if (className == null) {
-                    this
-                } else {
-                    ClassName.bestGuess(className)
-                }
-            }
-        }
-    }
-
-
+            asType().asTypeName().toKotlinType()
 
     private fun buildGetBundleFun(): FunSpec {
         val tmActivity = mElements.getTypeElement(ACTIVITY.className).asType()

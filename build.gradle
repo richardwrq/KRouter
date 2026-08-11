@@ -30,9 +30,6 @@ ext.deps = [
                 constraint: 'androidx.constraintlayout:constraintlayout:2.2.2',
                 fragment  : 'androidx.fragment:fragment:1.8.9'
         ],
-        kotlin    : [
-                reflect: 'org.jetbrains.kotlin:kotlin-reflect:2.3.21'
-        ],
         auto      : [
                 serviceAnnotations: 'com.google.auto.service:auto-service-annotations:1.1.1',
                 serviceProcessor  : 'com.google.auto.service:auto-service:1.1.1'

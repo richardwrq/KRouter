@@ -16,4 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = 'KRouter'
 
-include ':app', ':krouter-annotation', ':krouter-api', ':krouter-compiler', ':module-java', ':common'
+include ':app', ':krouter-annotation', ':krouter-api', ':krouter-compiler', ':module-java', ':common', ':compiler-integration-test'
