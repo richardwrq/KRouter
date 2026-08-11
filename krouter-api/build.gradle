@@ -26,11 +26,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    if (Boolean.valueOf(LOCAL_TEST)) {
-        implementation project(":krouter-annotation")
-    } else {
-        implementation deps.krouter.annotation
-    }
+    implementation project(":krouter-annotation")
     testImplementation deps.junit
     androidTestImplementation deps.support.test.runner
     androidTestImplementation deps.support.test.espresso.core
@@ -38,8 +34,4 @@ dependencies {
 //    implementation deps.support.compat
     api deps.support.fragment
     implementation deps.kotlin.reflect
-}
-
-if (!Boolean.valueOf(LOCAL_TEST)) {
-    apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"
 }

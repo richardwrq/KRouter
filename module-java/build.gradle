@@ -1,8 +1,20 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
-if (!LOCAL_TEST) {
-    apply plugin: "com.github.richardwrq.krouter"
+
+kapt {
+    arguments {
+        arg("moduleName", project.getName())
+    }
+}
+
+def krouterAssetsDir = file("$buildDir/generated/krouter/assets")
+def generateKRouterMarker = tasks.register("generateKRouterMarker") {
+    outputs.dir(krouterAssetsDir)
+    doLast {
+        krouterAssetsDir.mkdirs()
+        new File(krouterAssetsDir, "KRouter_${project.name}").createNewFile()
+    }
 }
 
 android {
@@ -25,14 +37,16 @@ android {
         }
     }
 
-}
-
-if (LOCAL_TEST) {
-    kapt {
-        arguments {
-            arg("moduleName", project.getName())
+    sourceSets {
+        main {
+            assets.srcDir(krouterAssetsDir)
         }
     }
+
+}
+
+tasks.matching { it.name == "preBuild" }.all {
+    dependsOn(generateKRouterMarker)
 }
 
 dependencies {
@@ -45,12 +59,7 @@ dependencies {
 
     implementation deps.kotlin.stdLibJre8
     implementation project(':common')
-    if (LOCAL_TEST) {
-        implementation project(':krouter-api')
-        implementation project(':krouter-annotation')
-        kapt project(':krouter-compiler')
-    } else {
-        implementation deps.krouter.api
-        kapt deps.krouter.compiler
-    }
+    implementation project(':krouter-api')
+    implementation project(':krouter-annotation')
+    kapt project(':krouter-compiler')
 }

@@ -5,14 +5,10 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation gradleApi()
     implementation localGroovy()
-    implementation deps.krouter.annotation
+    implementation project(':krouter-annotation')
     compileOnly deps.android.gradlePlugin
 //    compileOnly "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
 }
 
 sourceCompatibility = "1.7"
 targetCompatibility = "1.7"
-
-if (!Boolean.valueOf(LOCAL_TEST)) {
-    apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"
-}

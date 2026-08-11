@@ -11,7 +11,3 @@ targetCompatibility = "1.7"
 repositories {
     mavenCentral()
 }
-
-if (!Boolean.valueOf(LOCAL_TEST)) {
-    apply from: "https://raw.githubusercontent.com/richardwrq/JCenter/master/bintray_push.gradle"
-}
