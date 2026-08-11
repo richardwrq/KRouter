@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application android:enabled="true">
+        <activity
+            android:name="com.github.richardwrq.krouter.api.core.ManifestInternalActivity"
+            android:enabled="true"
+            android:exported="false" />
+        <activity
+            android:name="com.github.richardwrq.krouter.api.core.ManifestReplacementActivity"
+            android:enabled="true"
+            android:exported="false" />
+        <activity
+            android:name="com.github.richardwrq.krouter.api.core.ManifestExportedActivity"
+            android:enabled="true"
+            android:exported="true" />
+        <activity
+            android:name="com.github.richardwrq.krouter.api.core.ManifestDisabledActivity"
+            android:enabled="false"
+            android:exported="false" />
+        <activity
+            android:name="com.github.richardwrq.krouter.api.core.ThrowingCallerActivity"
+            android:enabled="true"
+            android:exported="false" />
+        <activity
+            android:name="com.github.richardwrq.krouter.api.activity.SchemeFilterActivity"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="wrq.richard.com"
+                    android:path="/krouter/sample/Main3Activity"
+                    android:scheme="krouter" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

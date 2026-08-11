@@ -35,10 +35,13 @@ import java.util.*
  */
 object KRouter {
 
+    private data class InitializationState(
+            val applicationContext: Context,
+            val configuredPolicy: ExternalDeepLinkPolicy,
+            val boundPolicy: BoundExternalDeepLinkPolicy)
+
     @Volatile
-    private var boundExternalDeepLinkPolicy: BoundExternalDeepLinkPolicy? = null
-    private var configuredExternalDeepLinkPolicy: ExternalDeepLinkPolicy? = null
-    private var initializedContext: Context? = null
+    private var initializationState: InitializationState? = null
 
     @JvmStatic
     @Synchronized
@@ -56,36 +59,54 @@ object KRouter {
         val applicationContext = context as? android.app.Application
                 ?: context.applicationContext
                 ?: context
-        if (boundExternalDeepLinkPolicy != null) {
-            check(initializedContext === applicationContext &&
-                    configuredExternalDeepLinkPolicy == externalDeepLinkPolicy) {
+        val existingState = initializationState
+        if (existingState != null) {
+            check(existingState.applicationContext === applicationContext &&
+                    existingState.configuredPolicy == externalDeepLinkPolicy) {
                 "KRouter is already initialized; the external deep-link policy is frozen"
             }
             return
         }
 
         Router.init(applicationContext)
-        val boundPolicy = BoundExternalDeepLinkPolicy.bind(externalDeepLinkPolicy) { path ->
+        val boundPolicy = BoundExternalDeepLinkPolicy.bind(
+                externalDeepLinkPolicy,
+                applicationContext) { path ->
             Router.getInstance().resolveExactActivity(path)
         }
-        configuredExternalDeepLinkPolicy = externalDeepLinkPolicy
-        initializedContext = applicationContext
-        boundExternalDeepLinkPolicy = boundPolicy
+        initializationState = InitializationState(
+                applicationContext,
+                externalDeepLinkPolicy,
+                boundPolicy)
     }
 
     /**
      * Validates and dispatches an intent received by an exported entry point.
-     * Incoming extras, flags, ClipData, selector and component are ignored.
+     * Incoming extras and flags are ignored. ClipData and selectors are rejected.
+     * A component is accepted only when it identifies this application's
+     * [com.github.richardwrq.krouter.api.activity.SchemeFilterActivity].
      *
-     * @return true when the URI was admitted by the frozen policy. An existing
-     * route interceptor may still prevent the target Activity from starting.
+     * @return true only when the URI was admitted, no interceptor rejected it,
+     * and the target Activity launch call completed without an exception.
      */
     @JvmStatic
     fun handleExternalIntent(context: Context, intent: Intent): Boolean {
-        val match = boundExternalDeepLinkPolicy?.match(intent) ?: return false
+        val state = initializationState ?: return false
+        val callingApplication = context as? android.app.Application
+                ?: context.applicationContext
+                ?: return false
+        if (callingApplication !== state.applicationContext) {
+            Logger.w("External deep link rejected: context is not from the initialized application")
+            return false
+        }
+        val match = state.boundPolicy.match(intent) ?: return false
         val navigator = Navigator(match.path, match.extras).useContext(context)
-        Router.getInstance().routeExactActivity(navigator, match.routeMetadata)
-        return true
+        return try {
+            Router.getInstance().routeExactActivity(navigator, match.routeMetadata)
+        } catch (exception: RuntimeException) {
+            Logger.e("External deep-link Activity launch failed: ${exception.message}")
+            false
+        }
     }
 
     /**
@@ -259,13 +280,7 @@ object KRouter {
             }
         }
 
-        internal constructor(path: String) {
-            val uri = Uri.parse(path)
-            uri.queryParameterNames.forEach {
-                extras.putString(it, uri.getQueryParameter(it))
-            }
-            this.path = path
-        }
+        internal constructor(path: String) : this(Uri.parse(path))
 
         internal constructor(path: String, extras: Bundle) {
             this.path = path
@@ -582,10 +597,9 @@ object KRouter {
 
     @Synchronized
     internal fun resetForTests() {
-        boundExternalDeepLinkPolicy = null
-        configuredExternalDeepLinkPolicy = null
-        initializedContext = null
+        initializationState = null
         RouteTable.clear()
+        Router.getInstance().resetForTests()
     }
 
 }

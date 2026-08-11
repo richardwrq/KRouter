@@ -15,15 +15,15 @@ import com.github.richardwrq.krouter.provider.NoImplProvider
 @Route(path = RouterTable.MAIN2_ATY_PATH)
 class Main2Activity : AppCompatActivity() {
 
-    @Inject("person")
+    @Inject(name = "person", isRequired = true)
     lateinit var person: Person
 
     //NoImplProvider服务
-    @Inject("NoImplProvider")
+    @Inject(name = "NoImplProvider", isRequired = true)
     lateinit var provider: NoImplProvider
 
     //MyProvider服务
-    @Inject("provider/myprovider")
+    @Inject(name = "provider/myprovider", isRequired = true)
     lateinit var myProvider: MyProvider
 
     override fun onCreate(savedInstanceState: Bundle?) {

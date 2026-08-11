@@ -59,6 +59,14 @@ internal class ActivityHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(r
 
     override fun handle(context: Context, navigator: KRouter.Navigator): Any? {
         Logger.i("Handle Activity..")
+        Handler(Looper.getMainLooper()).post {
+            handleImmediately(context, navigator)
+        }
+        return null
+    }
+
+    /** Launches an already validated external Activity while exceptions remain observable. */
+    internal fun handleImmediately(context: Context, navigator: KRouter.Navigator) {
         val intent = Intent()
         val component = ComponentName(context, routeMetadata.clazz)
 //                try {
@@ -71,53 +79,50 @@ internal class ActivityHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(r
         intent.setComponent(component)
                 .addFlags(navigator.flags)
                 .putExtras(navigator.extras)
-        Handler(Looper.getMainLooper()).post {
-            try {
-                when {
-                    navigator.activity != null -> {
-                        Logger.d("startActivityForResult >> ${routeMetadata.clazz.simpleName}")
-                        navigator.activity!!.startActivityForResult(
-                                intent,
-                                navigator.requestCode,
-                                navigator.options)
-                    }
-                    navigator.fragment != null -> {
-                        Logger.d("startActivityForResult >> ${routeMetadata.clazz.simpleName}")
-                        navigator.fragment?.startActivityForResult(
-                                intent,
-                                navigator.requestCode,
-                                navigator.options)
-                    }
-                    navigator.fragmentV4 != null -> {
-                        Logger.d("startActivityForResult >> ${routeMetadata.clazz.simpleName}")
-                        navigator.fragmentV4?.startActivityForResult(
-                                intent,
-                                navigator.requestCode,
-                                navigator.options)
-                    }
-                    navigator.context is Activity -> {
-                        Logger.d("startActivity >> ${routeMetadata.clazz.simpleName}")
-                        (navigator.context as Activity).startActivityForResult(
-                                intent,
-                                navigator.requestCode,
-                                navigator.options)
-                    }
-                    else -> {
-                        Logger.d("startActivity >> ${routeMetadata.clazz.simpleName}")
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        val tmpContext = navigator.context ?: context
-                        ActivityCompat.startActivity(tmpContext, intent, navigator.options)
-                    }
+        try {
+            when {
+                navigator.activity != null -> {
+                    Logger.d("startActivityForResult >> ${routeMetadata.clazz.simpleName}")
+                    navigator.activity!!.startActivityForResult(
+                            intent,
+                            navigator.requestCode,
+                            navigator.options)
                 }
-                if (navigator.enterAnim > 0 || navigator.exitAnim > 0) {
-                    navigator.activity?.overridePendingTransition(navigator.enterAnim, navigator.exitAnim)
+                navigator.fragment != null -> {
+                    Logger.d("startActivityForResult >> ${routeMetadata.clazz.simpleName}")
+                    navigator.fragment?.startActivityForResult(
+                            intent,
+                            navigator.requestCode,
+                            navigator.options)
                 }
-                navigator.routeArrivedCallback?.invoke(navigator, routeMetadata.clazz.name)
-            } catch (e: ActivityNotFoundException) {
-                throw RouteNotFoundException(e)
+                navigator.fragmentV4 != null -> {
+                    Logger.d("startActivityForResult >> ${routeMetadata.clazz.simpleName}")
+                    navigator.fragmentV4?.startActivityForResult(
+                            intent,
+                            navigator.requestCode,
+                            navigator.options)
+                }
+                navigator.context is Activity -> {
+                    Logger.d("startActivity >> ${routeMetadata.clazz.simpleName}")
+                    (navigator.context as Activity).startActivityForResult(
+                            intent,
+                            navigator.requestCode,
+                            navigator.options)
+                }
+                else -> {
+                    Logger.d("startActivity >> ${routeMetadata.clazz.simpleName}")
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    val tmpContext = navigator.context ?: context
+                    ActivityCompat.startActivity(tmpContext, intent, navigator.options)
+                }
             }
+            if (navigator.enterAnim > 0 || navigator.exitAnim > 0) {
+                navigator.activity?.overridePendingTransition(navigator.enterAnim, navigator.exitAnim)
+            }
+            navigator.routeArrivedCallback?.invoke(navigator, routeMetadata.clazz.name)
+        } catch (e: ActivityNotFoundException) {
+            throw RouteNotFoundException(e)
         }
-        return null
     }
 }
 

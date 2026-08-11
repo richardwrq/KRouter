@@ -1,21 +1,37 @@
 package com.github.richardwrq.krouter.api.core
 
 import android.app.Activity
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.net.Uri
 import android.os.Bundle
 import com.github.richardwrq.krouter.annotation.RouteType
 import com.github.richardwrq.krouter.annotation.model.RouteMetadata
+import com.github.richardwrq.krouter.api.activity.SchemeFilterActivity
 import com.github.richardwrq.krouter.api.utils.Logger
 import java.util.LinkedHashMap
 import java.util.LinkedHashSet
 
 internal class BoundExternalDeepLinkPolicy private constructor(
-        private val rules: Map<ExternalDeepLinkEndpoint, BoundExternalDeepLinkRule>) {
+        private val rules: Map<ExternalDeepLinkEndpoint, BoundExternalDeepLinkRule>,
+        private val proxyComponent: ComponentName) {
 
     fun match(intent: Intent): ExternalDeepLinkMatch? {
         if (intent.action != Intent.ACTION_VIEW) {
             return reject("action is not ACTION_VIEW")
+        }
+        if (intent.clipData != null) {
+            return reject("ClipData is not allowed")
+        }
+        if (intent.selector != null) {
+            return reject("selectors are not allowed")
+        }
+        val incomingComponent = intent.component
+        if (incomingComponent != null && incomingComponent != proxyComponent) {
+            return reject("component does not identify the KRouter deep-link proxy")
         }
 
         val uri = intent.data ?: return reject("data URI is missing")
@@ -171,27 +187,81 @@ internal class BoundExternalDeepLinkPolicy private constructor(
 
         fun bind(
                 policy: ExternalDeepLinkPolicy,
+                context: Context,
                 exactRouteResolver: (String) -> RouteMetadata?): BoundExternalDeepLinkPolicy {
             val boundRules = LinkedHashMap<ExternalDeepLinkEndpoint, BoundExternalDeepLinkRule>()
             policy.rules.forEach { rule ->
+                val target = rule.expectedTarget
+                val expectedComponent = ComponentName(
+                        target.packageName ?: context.packageName,
+                        target.className)
+                require(expectedComponent.packageName == context.packageName) {
+                    "External deep-link Activity must belong to the initialized application: " +
+                            rule.endpoint.path
+                }
                 val metadata = exactRouteResolver(rule.endpoint.path)
                         ?: throw IllegalArgumentException(
                                 "External deep-link route is missing: ${rule.endpoint.path}")
                 require(metadata.path == rule.endpoint.path &&
                         metadata.routeType == RouteType.ACTIVITY &&
-                        Activity::class.java.isAssignableFrom(metadata.clazz)) {
+                        Activity::class.java.isAssignableFrom(metadata.clazz) &&
+                        metadata.clazz.name == expectedComponent.className) {
                     "External deep-link route must resolve exactly to an Activity: ${rule.endpoint.path}"
                 }
-                boundRules[rule.endpoint] = BoundExternalDeepLinkRule(rule, metadata)
+                validateManifestActivity(context, expectedComponent, rule.endpoint.path)
+                boundRules[rule.endpoint] = BoundExternalDeepLinkRule(
+                        rule,
+                        metadata,
+                        expectedComponent)
             }
-            return BoundExternalDeepLinkPolicy(boundRules.toMap())
+            return BoundExternalDeepLinkPolicy(
+                    boundRules.toMap(),
+                    ComponentName(context.packageName, SchemeFilterActivity::class.java.name))
+        }
+
+        @Suppress("DEPRECATION")
+        private fun validateManifestActivity(
+                context: Context,
+                expectedComponent: ComponentName,
+                path: String) {
+            val disabledComponentsFlag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                PackageManager.MATCH_DISABLED_COMPONENTS
+            } else {
+                PackageManager.GET_DISABLED_COMPONENTS
+            }
+            val activityInfo = try {
+                context.packageManager.getActivityInfo(
+                        expectedComponent,
+                        disabledComponentsFlag)
+            } catch (exception: PackageManager.NameNotFoundException) {
+                throw IllegalArgumentException(
+                        "External deep-link Activity is missing from the merged manifest: $path",
+                        exception)
+            }
+            require(activityInfo.name == expectedComponent.className &&
+                    activityInfo.packageName == expectedComponent.packageName) {
+                "External deep-link manifest Activity does not match the expected component: $path"
+            }
+            val componentEnabledSetting = context.packageManager
+                    .getComponentEnabledSetting(expectedComponent)
+            require(activityInfo.enabled && activityInfo.applicationInfo.enabled) {
+                "External deep-link Activity and application must be enabled: $path"
+            }
+            require(componentEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT ||
+                    componentEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+                "External deep-link Activity is disabled at runtime: $path"
+            }
+            require(!activityInfo.exported) {
+                "External deep-link target Activity must not be exported: $path"
+            }
         }
     }
 }
 
 internal data class BoundExternalDeepLinkRule(
         val rule: ExternalDeepLinkRule,
-        val routeMetadata: RouteMetadata)
+        val routeMetadata: RouteMetadata,
+        val expectedComponent: ComponentName)
 
 internal data class ExternalDeepLinkMatch(
         val routeMetadata: RouteMetadata,

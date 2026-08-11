@@ -24,11 +24,13 @@
 		</activity>
 		<activity
 			android:name=".activity.Main3Activity"
+			android:enabled="true"
 			android:exported="false">
 		</activity>
 
 		<activity
 			android:name="com.github.richardwrq.krouter.api.activity.SchemeFilterActivity"
+			android:enabled="true"
 			android:exported="true">
 			<intent-filter>
 				<!-- The runtime allowlist remains authoritative for explicit intents. -->

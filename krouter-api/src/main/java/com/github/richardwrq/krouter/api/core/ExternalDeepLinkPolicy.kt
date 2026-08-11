@@ -1,5 +1,7 @@
 package com.github.richardwrq.krouter.api.core
 
+import android.app.Activity
+import android.content.ComponentName
 import java.util.Collections
 import java.util.LinkedHashMap
 import java.util.LinkedHashSet
@@ -20,16 +22,51 @@ class ExternalDeepLinkPolicy private constructor(
         private val rules = LinkedHashMap<ExternalDeepLinkEndpoint, ExternalDeepLinkRule>()
 
         /**
-         * Allows one exact external URI destination.
-         *
-         * Query parameters are denied unless their decoded key is listed in
-         * [queryParameters]. Duplicate decoded keys are always rejected.
+         * Allows one exact external URI destination backed by [expectedActivity].
+         * The Activity must be the exact registered route and must be declared,
+         * enabled and non-exported in the merged application manifest.
          */
         fun allow(
                 scheme: String,
                 host: String,
                 path: String,
+                expectedActivity: Class<out Activity>,
                 vararg queryParameters: String): Builder {
+            return addRule(
+                    scheme,
+                    host,
+                    path,
+                    ExternalDeepLinkTarget(null, expectedActivity.name),
+                    queryParameters)
+        }
+
+        /**
+         * Allows one exact external URI destination backed by [expectedComponent].
+         * The component must belong to the initialized application and resolve to
+         * the exact registered, enabled and non-exported Activity route.
+         */
+        fun allow(
+                scheme: String,
+                host: String,
+                path: String,
+                expectedComponent: ComponentName,
+                vararg queryParameters: String): Builder {
+            return addRule(
+                    scheme,
+                    host,
+                    path,
+                    ExternalDeepLinkTarget(
+                            expectedComponent.packageName,
+                            expectedComponent.className),
+                    queryParameters)
+        }
+
+        private fun addRule(
+                scheme: String,
+                host: String,
+                path: String,
+                expectedTarget: ExternalDeepLinkTarget,
+                queryParameters: Array<out String>): Builder {
             val normalizedScheme = normalizeScheme(scheme)
             val normalizedHost = normalizeHost(host)
             validatePath(path)
@@ -48,6 +85,7 @@ class ExternalDeepLinkPolicy private constructor(
             }
             val rule = ExternalDeepLinkRule(
                     endpoint,
+                    expectedTarget,
                     Collections.unmodifiableSet(LinkedHashSet(allowedQueryParameters)))
             rules[endpoint] = rule
             return this
@@ -122,4 +160,9 @@ internal data class ExternalDeepLinkEndpoint(
 
 internal data class ExternalDeepLinkRule(
         val endpoint: ExternalDeepLinkEndpoint,
+        val expectedTarget: ExternalDeepLinkTarget,
         val allowedQueryParameters: Set<String>)
+
+internal data class ExternalDeepLinkTarget(
+        val packageName: String?,
+        val className: String)

@@ -6,6 +6,7 @@ import com.github.richardwrq.krouter.annotation.RouteType;
 import com.github.richardwrq.krouter.annotation.model.RouteMetadata;
 import com.github.richardwrq.krouter.api.core.ExternalDeepLinkPolicy;
 import com.github.richardwrq.krouter.api.core.KRouter;
+import com.github.richardwrq.krouter.activity.Main3Activity;
 import com.github.richardwrq.module.java.BindService;
 
 import java.util.Map;
@@ -28,7 +29,7 @@ public class BaseApplication extends Application {
         super.onCreate();
         KRouter.openDebug();
         ExternalDeepLinkPolicy externalDeepLinks = ExternalDeepLinkPolicy.builder()
-                .allow("krouter", "wrq.richard.com", MAIN3_ATY_PATH)
+                .allow("krouter", "wrq.richard.com", MAIN3_ATY_PATH, Main3Activity.class)
                 .build();
         KRouter.init(this, externalDeepLinks);
         KRouter.INSTANCE.addRoutePath(new Function1<Map<String, RouteMetadata>, Unit>() {

@@ -22,6 +22,18 @@ internal object RouteTable {
     internal val interceptors = TreeMap<Int, InterceptorMetaData>()
     internal val matchers = mutableListOf<PathMatcher>(DefaultMatcher)
 
+    internal fun replaceLoadedTables(
+            loadedRoutes: Map<String, RouteMetadata>,
+            loadedProviders: Map<String, Class<*>>,
+            loadedInterceptors: Map<Int, InterceptorMetaData>) {
+        routes.clear()
+        routes.putAll(loadedRoutes)
+        providers.clear()
+        providers.putAll(loadedProviders)
+        interceptors.clear()
+        interceptors.putAll(loadedInterceptors)
+    }
+
     fun clear() {
         routes.clear()
         providers.clear()

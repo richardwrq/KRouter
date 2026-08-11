@@ -5,6 +5,7 @@ import android.app.Application
 import android.app.Fragment
 import android.content.Context
 import com.github.richardwrq.krouter.annotation.*
+import com.github.richardwrq.krouter.annotation.model.InterceptorMetaData
 import com.github.richardwrq.krouter.annotation.model.RouteMetadata
 import com.github.richardwrq.krouter.api.data.RouteTable
 import com.github.richardwrq.krouter.api.exceptions.HandleException
@@ -23,6 +24,7 @@ import java.util.*
 internal class Router private constructor() {
 
     internal lateinit var context: Context
+    private var routeTablesLoaded = false
 
     private val PACKAGE = "com.github.richardwrq.krouter."
 
@@ -35,28 +37,102 @@ internal class Router private constructor() {
         fun getInstance() = Inner.instance
 
         fun init(context: Context) {
-            getInstance().context = context as? Application ?: context.applicationContext
-            getInstance().loadRouteTable()
+            val router = getInstance()
+            val applicationContext = context as? Application
+                    ?: context.applicationContext
+                    ?: context
+            if (router.routeTablesLoaded) {
+                check(router.context === applicationContext) {
+                    "KRouter route tables are already loaded for another application"
+                }
+                return
+            }
+            router.context = applicationContext
+            router.loadRouteTable()
+            router.routeTablesLoaded = true
         }
+    }
+
+    internal fun resetForTests() {
+        routeTablesLoaded = false
     }
 
     /**
      * 加载路由表
      */
     private fun loadRouteTable() {
-        context.assets.list("")?.filter { it.startsWith("$PROJECT_NAME$SEPARATOR") }.orEmpty().forEach {
+        val loaders = context.assets.list("")
+                ?.filter { it.startsWith("$PROJECT_NAME$SEPARATOR") }
+                .orEmpty()
+                .mapNotNull {
             val moduleName = transferModuleName(it)
             if (moduleName.isBlank()) {
-                return@forEach
+                return@mapNotNull null
             }
             val interceptorLoader = "$PACKAGE$INTERCEPTOR_LOADER_NAME$SEPARATOR$moduleName"
             val providerLoader = "$PACKAGE$PROVIDER_LOADER_NAME$SEPARATOR$moduleName"
             val routeLoader = "$PACKAGE$ROUTE_LOADER_NAME$SEPARATOR$moduleName"
             Logger.i("load interceptorLoader: $interceptorLoader, providerLoader: $providerLoader, routeLoader: $routeLoader")
-            (loadClassForName(interceptorLoader)?.newInstance() as? IInterceptorLoader)?.loadInto(RouteTable.interceptors)
-            (loadClassForName(providerLoader)?.newInstance() as? IProviderLoader)?.loadInto(RouteTable.providers)
-            (loadClassForName(routeLoader)?.newInstance() as? IRouteLoader)?.loadInto(RouteTable.routes)
+            RouteTableLoaders(
+                    moduleName,
+                    loadClassForName(interceptorLoader)?.newInstance() as? IInterceptorLoader,
+                    loadClassForName(providerLoader)?.newInstance() as? IProviderLoader,
+                    loadClassForName(routeLoader)?.newInstance() as? IRouteLoader)
         }
+        installRouteTables(loaders)
+    }
+
+    /**
+     * Runs every generated loader against staged tables and commits only after
+     * all modules have loaded successfully. Duplicate route paths, provider
+     * keys and interceptor priorities are rejected instead of silently
+     * replacing an earlier module's registration.
+     */
+    internal fun installRouteTables(loaders: List<RouteTableLoaders>) {
+        val stagedRoutes = LinkedHashMap(RouteTable.routes)
+        val stagedProviders = LinkedHashMap(RouteTable.providers)
+        val stagedInterceptors = TreeMap(RouteTable.interceptors)
+
+        loaders.forEach { loadersForModule ->
+            val moduleRoutes = DuplicateRejectingLinkedMap<String, RouteMetadata>(
+                    loadersForModule.moduleName,
+                    "route path")
+            val moduleProviders = DuplicateRejectingLinkedMap<String, Class<*>>(
+                    loadersForModule.moduleName,
+                    "provider key")
+            val moduleInterceptors = DuplicateRejectingInterceptorMap(
+                    loadersForModule.moduleName)
+            loadersForModule.routeLoader?.loadInto(moduleRoutes)
+            loadersForModule.providerLoader?.loadInto(moduleProviders)
+            loadersForModule.interceptorLoader?.loadInto(moduleInterceptors)
+
+            moduleRoutes.forEach { (path, metadata) ->
+                check(path == metadata.path) {
+                    "Route loader ${loadersForModule.moduleName} registered a mismatched path: " +
+                            "$path != ${metadata.path}"
+                }
+            }
+            mergeRejectingDuplicates(
+                    moduleRoutes,
+                    stagedRoutes,
+                    loadersForModule.moduleName,
+                    "route path")
+            mergeRejectingDuplicates(
+                    moduleProviders,
+                    stagedProviders,
+                    loadersForModule.moduleName,
+                    "provider key")
+            mergeRejectingDuplicates(
+                    moduleInterceptors,
+                    stagedInterceptors,
+                    loadersForModule.moduleName,
+                    "interceptor priority")
+        }
+
+        RouteTable.replaceLoadedTables(
+                stagedRoutes,
+                stagedProviders,
+                stagedInterceptors)
     }
 
     private fun loadClassForName(className: String): Class<*>? {
@@ -97,13 +173,24 @@ internal class Router private constructor() {
     /** Routes one Activity captured by the frozen external policy. */
     internal fun routeExactActivity(
             navigator: KRouter.Navigator,
-            routeMetadata: RouteMetadata): Any? {
+            routeMetadata: RouteMetadata): Boolean {
         check(routeMetadata.path == navigator.path &&
                 routeMetadata.routeType == RouteType.ACTIVITY &&
                 Activity::class.java.isAssignableFrom(routeMetadata.clazz)) {
             "External route is not an exact Activity route"
         }
-        return routeHandlers(navigator, listOf(createHandler(routeMetadata)))
+        navigator.beforeRouteCallback?.invoke(navigator, routeMetadata.clazz.name)
+        if (isIntercept(navigator)) {
+            navigator.routeInterceptCallback?.invoke(navigator, routeMetadata.clazz.name)
+            return false
+        }
+        return try {
+            ActivityHandler(routeMetadata).handleImmediately(context, navigator)
+            true
+        } catch (exception: RuntimeException) {
+            navigator.routeFailedCallback?.invoke(navigator, routeMetadata.clazz.name)
+            throw exception
+        }
     }
 
     private fun routeHandlers(
@@ -119,7 +206,14 @@ internal class Router private constructor() {
                 } else {
                     Logger.d("Start handler ")
                     val result = it.handle(context, navigator)
-                    navigator.routeArrivedCallback?.invoke(navigator, it.routeMetadata.clazz.name)
+                    // ActivityHandler completes asynchronously on the main thread and reports
+                    // arrival only after startActivity succeeds. Reporting here would fire the
+                    // callback before launch and then a second time from handleImmediately().
+                    if (it !is ActivityHandler) {
+                        navigator.routeArrivedCallback?.invoke(
+                                navigator,
+                                it.routeMetadata.clazz.name)
+                    }
                     if (result is Fragment || result is androidx.fragment.app.Fragment) {
                         return result
                     }
@@ -191,5 +285,55 @@ internal class Router private constructor() {
 
     object RoutePriorityComparator : Comparator<AbsRouteHandler> {
         override fun compare(o1: AbsRouteHandler, o2: AbsRouteHandler): Int = o1.routeMetadata.priority - o2.routeMetadata.priority
+    }
+}
+
+internal data class RouteTableLoaders(
+        val moduleName: String,
+        val interceptorLoader: IInterceptorLoader? = null,
+        val providerLoader: IProviderLoader? = null,
+        val routeLoader: IRouteLoader? = null)
+
+private class DuplicateRejectingLinkedMap<K, V>(
+        private val moduleName: String,
+        private val keyDescription: String) : LinkedHashMap<K, V>() {
+
+    override fun put(key: K, value: V): V? {
+        check(!containsKey(key)) {
+            "Duplicate $keyDescription '$key' inside module $moduleName"
+        }
+        return super.put(key, value)
+    }
+
+    override fun putAll(from: Map<out K, V>) {
+        from.forEach { (key, value) -> put(key, value) }
+    }
+}
+
+private class DuplicateRejectingInterceptorMap(
+        private val moduleName: String) : TreeMap<Int, InterceptorMetaData>() {
+
+    override fun put(key: Int, value: InterceptorMetaData): InterceptorMetaData? {
+        check(!containsKey(key)) {
+            "Duplicate interceptor priority '$key' inside module $moduleName"
+        }
+        return super.put(key, value)
+    }
+
+    override fun putAll(from: Map<out Int, InterceptorMetaData>) {
+        from.forEach { (key, value) -> put(key, value) }
+    }
+}
+
+private fun <K, V> mergeRejectingDuplicates(
+        moduleEntries: Map<K, V>,
+        stagedEntries: MutableMap<K, V>,
+        moduleName: String,
+        keyDescription: String) {
+    moduleEntries.forEach { (key, value) ->
+        check(!stagedEntries.containsKey(key)) {
+            "Duplicate $keyDescription '$key' from module $moduleName"
+        }
+        stagedEntries[key] = value
     }
 }
