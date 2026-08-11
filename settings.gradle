@@ -1,4 +1,6 @@
 pluginManagement {
+    includeBuild('krouter-gradle-plugin')
+
     repositories {
         google()
         mavenCentral()

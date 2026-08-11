@@ -1,14 +1,31 @@
-apply plugin: 'groovy'
-apply plugin: 'java'
-
-dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation gradleApi()
-    implementation localGroovy()
-    implementation project(':krouter-annotation')
-    compileOnly deps.android.gradlePlugin
-//    compileOnly "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
+plugins {
+    id 'groovy'
+    id 'java-gradle-plugin'
 }
 
-sourceCompatibility = "1.7"
-targetCompatibility = "1.7"
+group = 'com.github.richardwrq'
+version = '0.2.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+dependencies {
+    implementation localGroovy()
+
+    testImplementation gradleTestKit()
+    testImplementation 'junit:junit:4.13.2'
+}
+
+gradlePlugin {
+    plugins {
+        krouter {
+            id = 'com.github.richardwrq.krouter'
+            implementationClass = 'com.github.richardwrq.krouter.gradle.plugin.KRouterPlugin'
+            displayName = 'KRouter Android plugin'
+            description = 'Configures KRouter annotation processing and generated module marker assets.'
+        }
+    }
+}

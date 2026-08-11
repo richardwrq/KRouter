@@ -1,4 +1,5 @@
 plugins {
+    id 'base'
     id 'com.android.application' version '8.13.2' apply false
     id 'com.android.library' version '8.13.2' apply false
     id 'org.jetbrains.kotlin.android' version '2.3.21' apply false
@@ -44,6 +45,25 @@ subprojects {
     version = rootProject.version
 }
 
-tasks.register('clean', Delete) {
-    delete layout.buildDirectory
+def krouterPluginBuild = gradle.includedBuild('krouter-gradle-plugin')
+
+tasks.register('pluginTest') {
+    group = 'verification'
+    description = 'Runs the standalone KRouter Gradle plugin tests.'
+    dependsOn krouterPluginBuild.task(':test')
+}
+
+tasks.register('pluginCheck') {
+    group = 'verification'
+    description = 'Runs all verification for the standalone KRouter Gradle plugin.'
+    dependsOn krouterPluginBuild.task(':check')
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('pluginCheck')
+    dependsOn subprojects.collect { "${it.path}:check" }
+}
+
+tasks.named('clean') {
+    dependsOn krouterPluginBuild.task(':clean')
 }

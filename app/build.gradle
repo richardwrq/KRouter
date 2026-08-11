@@ -2,22 +2,7 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'org.jetbrains.kotlin.kapt'
-}
-
-kapt {
-    arguments {
-        arg('moduleName', project.name)
-    }
-}
-
-def krouterAssetsDir = layout.buildDirectory.dir('generated/krouter/assets')
-def generateKRouterMarker = tasks.register('generateKRouterMarker') {
-    outputs.dir(krouterAssetsDir)
-    doLast {
-        def outputDir = krouterAssetsDir.get().asFile
-        outputDir.mkdirs()
-        new File(outputDir, "KRouter_${project.name}").createNewFile()
-    }
+    id 'com.github.richardwrq.krouter'
 }
 
 android {
@@ -50,7 +35,6 @@ android {
     }
 
     sourceSets {
-        main.assets.srcDir(krouterAssetsDir)
         debug.assets.srcDirs = ['src/debug/assets']
         release.assets.srcDirs = ['src/release/assets']
     }
@@ -61,10 +45,6 @@ kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
     }
-}
-
-tasks.named('preBuild') {
-    dependsOn(generateKRouterMarker)
 }
 
 dependencies {
