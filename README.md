@@ -62,6 +62,8 @@ dependencies {
 
 `clean` 必须作为单独一次 Gradle 调用先完成，以免和 included plugin build 的 publication 任务竞争。上述任务不需要凭证，不写入 Maven Local，也不会上传到远端；`build/repository/` 中的 `0.2.0-beta.1` 仅用于检查当前源码产物，不是公共 Maven 发布。
 
+外部消费者测试只从这个工作流本地仓库解析精确版本的 KRouter 制品。这些第一方制品由同一次检出的源码现场构建并通过 API、KAPT、R8 和运行入口检查，因此不固定跨平台可能变化的本地制品哈希；所有从 Google Maven 或 Maven Central 获取的第三方依赖仍执行严格的 SHA-256 校验。
+
 ## 基本用法
 
 ### 注册路由
