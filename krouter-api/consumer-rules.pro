@@ -7,6 +7,9 @@
 # KRouter later instantiates those classes through Class.newInstance(), so R8 must not
 # merge a concrete implementation into an abstract class or remove its public no-arg
 # constructor. Names may still be obfuscated because KRouter does not look them up by name.
+-keepclasseswithmembers,allowobfuscation @com.github.richardwrq.krouter.annotation.Provider class * {
+    public <init>();
+}
 -keep,allowobfuscation interface com.github.richardwrq.krouter.api.interfaces.IProvider
 -keep,allowobfuscation interface com.github.richardwrq.krouter.api.interfaces.SerializationProvider
 -keep,allowobfuscation interface com.github.richardwrq.krouter.api.interfaces.IRouteInterceptor

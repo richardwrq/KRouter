@@ -83,7 +83,7 @@ annotation class Inject(
  * Description：Provider
  */
 @Target(AnnotationTarget.CLASS)
-@Retention(AnnotationRetention.SOURCE)
+@Retention(AnnotationRetention.BINARY)
 annotation class Provider(/**
                            * Path of Provider
                            */

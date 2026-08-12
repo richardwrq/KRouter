@@ -40,7 +40,7 @@ This prerelease revives source builds and local publication checks. Any GitHub r
 - Honored runtime component-disable overrides during external-policy binding, rejected Activity aliases, and verified that rejecting interceptors launch nothing.
 - Rejected duplicate route paths, Provider keys, and interceptor priorities transactionally; external dispatch rejects ambiguous URIs, unknown or duplicate query keys, ClipData, and selectors while stripping incoming extras and flags.
 - Added an isolated, strictly verified consumer that runs the published plugin and annotation processor, compiles the public API, and checks reflection entry points and injected target names after shrinking.
-- Preserved generated `TypeToken<T>` signatures and the concrete Provider, interceptor, and Fragment constructors used by reflection through R8 full mode; verified those contracts in the minified release DEX and on Android 13.
+- Preserved generated `TypeToken<T>` signatures and the concrete Provider, interceptor, and Fragment constructors used by reflection through R8 full mode, including Providers that do not implement `IProvider`; verified those contracts in the minified release DEX.
 
 ### Compatibility notes
 

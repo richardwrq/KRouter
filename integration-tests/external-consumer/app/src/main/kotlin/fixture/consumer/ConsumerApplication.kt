@@ -17,6 +17,11 @@ class ConsumerApplication : Application() {
             "KRouter custom-object injection failed after shrinking"
         }
 
+        val plainProvider = KRouter.getProvider<Any>(PLAIN_PROVIDER_PATH)
+        check(plainProvider is FixturePlainProvider) {
+            "KRouter could not reflectively construct a plain Provider after shrinking"
+        }
+
         val platformFragment = KRouter.create(PLATFORM_FRAGMENT_PATH).request()
         check(platformFragment is android.app.Fragment) {
             "KRouter could not reflectively construct the platform Fragment after shrinking"
@@ -35,6 +40,7 @@ class ConsumerApplication : Application() {
     private companion object {
         const val PLATFORM_FRAGMENT_PATH = "/external-platform-fragment"
         const val ANDROIDX_FRAGMENT_PATH = "/external-androidx-fragment"
+        const val PLAIN_PROVIDER_PATH = "provider/external-plain"
         const val EXPECTED_PAYLOAD = "r8-custom-object"
     }
 }

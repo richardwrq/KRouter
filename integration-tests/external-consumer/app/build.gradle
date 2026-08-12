@@ -50,6 +50,7 @@ def generatedTypeToken = "${generatedInjector}\$exInject\$resolved0\$1".toString
 def typeToken = 'com.github.richardwrq.krouter.api.utils.TypeToken'
 def injectedPayload = 'fixture.consumer.ConsumerPayload'
 def providerImplementation = 'fixture.consumer.FixtureSerializationProvider'
+def plainProviderImplementation = 'fixture.consumer.FixturePlainProvider'
 def providerInterface = 'com.github.richardwrq.krouter.api.interfaces.IProvider'
 def serializationProviderInterface =
         'com.github.richardwrq.krouter.api.interfaces.SerializationProvider'
@@ -218,6 +219,7 @@ tasks.register('verifyConsumerRules') {
 
         [
                 providerImplementation,
+                plainProviderImplementation,
                 interceptorImplementation,
                 platformFragment,
                 androidXFragment
