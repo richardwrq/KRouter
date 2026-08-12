@@ -6,6 +6,11 @@
             android:name="com.github.richardwrq.krouter.api.core.ManifestInternalActivity"
             android:enabled="true"
             android:exported="false" />
+        <activity-alias
+            android:name="com.github.richardwrq.krouter.api.core.ManifestAliasActivity"
+            android:enabled="true"
+            android:exported="false"
+            android:targetActivity="com.github.richardwrq.krouter.api.core.ManifestInternalActivity" />
         <activity
             android:name="com.github.richardwrq.krouter.api.core.ManifestReplacementActivity"
             android:enabled="true"

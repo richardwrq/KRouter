@@ -242,6 +242,9 @@ internal class BoundExternalDeepLinkPolicy private constructor(
                     activityInfo.packageName == expectedComponent.packageName) {
                 "External deep-link manifest Activity does not match the expected component: $path"
             }
+            require(activityInfo.targetActivity == null) {
+                "External deep-link target must be a concrete Activity, not an alias: $path"
+            }
             val componentEnabledSetting = context.packageManager
                     .getComponentEnabledSetting(expectedComponent)
             require(activityInfo.enabled && activityInfo.applicationInfo.enabled) {

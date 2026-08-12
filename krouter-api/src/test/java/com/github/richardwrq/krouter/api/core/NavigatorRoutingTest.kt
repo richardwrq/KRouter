@@ -3,7 +3,9 @@ package com.github.richardwrq.krouter.api.core
 import android.app.Activity
 import android.app.Application
 import android.content.ComponentName
+import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
 import android.os.Looper
 import com.github.richardwrq.krouter.annotation.RouteType
 import com.github.richardwrq.krouter.annotation.model.RouteMetadata
@@ -80,7 +82,36 @@ class NavigatorRoutingTest {
         assertEquals("7", launched.getStringExtra("id"))
     }
 
+    @Test
+    fun activityLaunchFailureReportsFailureOnceWithoutArrival() {
+        val caller = Robolectric.buildActivity(FailingLaunchActivity::class.java).setup().get()
+        val navigator = KRouter.create(ROUTE_PATH)
+        var arrivedCount = 0
+        var failedCount = 0
+        var failedClassName = ""
+        navigator.subscribeArrived { _, _ -> arrivedCount++ }
+        navigator.subscribeNotFound { _, className ->
+            failedCount++
+            failedClassName = className
+        }
+
+        navigator.request(caller)
+        assertEquals(0, arrivedCount)
+        assertEquals(0, failedCount)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertEquals(0, arrivedCount)
+        assertEquals(1, failedCount)
+        assertEquals(ManifestInternalActivity::class.java.name, failedClassName)
+    }
+
     companion object {
         private const val ROUTE_PATH = "/krouter/sample/Main3Activity"
+    }
+}
+
+class FailingLaunchActivity : Activity() {
+    override fun startActivityForResult(intent: Intent?, requestCode: Int, options: Bundle?) {
+        throw SecurityException("Activity launch rejected for test")
     }
 }

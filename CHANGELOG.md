@@ -27,7 +27,7 @@ This prerelease revives source builds and local publication checks. Any GitHub r
 - Moved the KRouter Gradle plugin to a standalone included build using supported Android variant APIs and cacheable marker generation.
 - Mapped Kotlin plugin IDs directly to the verified implementation module and removed stale generated marker files after module renames.
 - Packaged Apache-2.0 license metadata in published archives and Maven POMs.
-- Reported normal Activity arrival exactly once, after the main-thread launch succeeds.
+- Reported normal Activity arrival exactly once after the main-thread launch succeeds, and routed asynchronous launch failures to the failure callback.
 
 ### Security
 
@@ -37,10 +37,10 @@ This prerelease revives source builds and local publication checks. Any GitHub r
 - Escaped generated provider keys and rejected blank or duplicate keys during annotation processing.
 - Declared Android component export state explicitly for the modern Android manifest model.
 - Made external deep links deny-all by default and bound each allowlisted URI to an exact, enabled, non-exported manifest Activity.
-- Honored runtime component-disable overrides during external-policy binding and verified that rejecting interceptors launch nothing.
+- Honored runtime component-disable overrides during external-policy binding, rejected Activity aliases, and verified that rejecting interceptors launch nothing.
 - Rejected duplicate route paths, Provider keys, and interceptor priorities transactionally; external dispatch rejects ambiguous URIs, unknown or duplicate query keys, ClipData, and selectors while stripping incoming extras and flags.
 - Added an isolated, strictly verified consumer that runs the published plugin and annotation processor, compiles the public API, and checks reflection entry points and injected target names after shrinking.
-- Preserved generated `TypeToken<T>` signatures through R8 full mode and verified the custom-object injection signature in the minified release DEX.
+- Preserved generated `TypeToken<T>` signatures and the concrete Provider, interceptor, and Fragment constructors used by reflection through R8 full mode; verified those contracts in the minified release DEX and on Android 13.
 
 ### Compatibility notes
 

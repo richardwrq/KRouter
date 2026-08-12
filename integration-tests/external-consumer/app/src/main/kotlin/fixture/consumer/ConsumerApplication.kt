@@ -16,9 +16,25 @@ class ConsumerApplication : Application() {
         check(target.payload == ConsumerPayload(EXPECTED_PAYLOAD)) {
             "KRouter custom-object injection failed after shrinking"
         }
+
+        val platformFragment = KRouter.create(PLATFORM_FRAGMENT_PATH).request()
+        check(platformFragment is android.app.Fragment) {
+            "KRouter could not reflectively construct the platform Fragment after shrinking"
+        }
+
+        val androidXFragment = KRouter.create(ANDROIDX_FRAGMENT_PATH).request()
+        check(androidXFragment is androidx.fragment.app.Fragment) {
+            "KRouter could not reflectively construct the AndroidX Fragment after shrinking"
+        }
+
+        check(RuntimeProbe.interceptorCalls == 2) {
+            "KRouter could not reflectively construct the route interceptor after shrinking"
+        }
     }
 
     private companion object {
+        const val PLATFORM_FRAGMENT_PATH = "/external-platform-fragment"
+        const val ANDROIDX_FRAGMENT_PATH = "/external-androidx-fragment"
         const val EXPECTED_PAYLOAD = "r8-custom-object"
     }
 }

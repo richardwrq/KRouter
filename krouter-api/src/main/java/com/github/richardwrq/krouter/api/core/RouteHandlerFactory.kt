@@ -59,8 +59,16 @@ internal class ActivityHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(r
 
     override fun handle(context: Context, navigator: KRouter.Navigator): Any? {
         Logger.i("Handle Activity..")
-        Handler(Looper.getMainLooper()).post {
-            handleImmediately(context, navigator)
+        val posted = Handler(Looper.getMainLooper()).post {
+            try {
+                handleImmediately(context, navigator)
+            } catch (exception: HandleException) {
+                exception.printStackTrace()
+                navigator.routeFailedCallback?.invoke(navigator, routeMetadata.clazz.name)
+            }
+        }
+        if (!posted) {
+            throw HandleException("Unable to schedule Activity ${routeMetadata.clazz.name}")
         }
         return null
     }
@@ -119,10 +127,14 @@ internal class ActivityHandler(routeMetadata: RouteMetadata) : AbsRouteHandler(r
             if (navigator.enterAnim > 0 || navigator.exitAnim > 0) {
                 navigator.activity?.overridePendingTransition(navigator.enterAnim, navigator.exitAnim)
             }
-            navigator.routeArrivedCallback?.invoke(navigator, routeMetadata.clazz.name)
         } catch (e: ActivityNotFoundException) {
             throw RouteNotFoundException(e)
+        } catch (e: HandleException) {
+            throw e
+        } catch (e: RuntimeException) {
+            throw HandleException(e)
         }
+        navigator.routeArrivedCallback?.invoke(navigator, routeMetadata.clazz.name)
     }
 }
 

@@ -146,6 +146,23 @@ class ExternalDeepLinkSecurityTest {
     }
 
     @Test
+    fun policyBindingRejectsActivityAliasEvenWhenResolvedNameMatchesExpectedComponent() {
+        val aliasComponent = ComponentName(application, ManifestAliasActivity::class.java)
+        val aliasInfo = application.packageManager.getActivityInfo(
+                aliasComponent,
+                PackageManager.MATCH_DISABLED_COMPONENTS)
+        assertEquals(aliasComponent.className, aliasInfo.name)
+        assertEquals(ManifestInternalActivity::class.java.name, aliasInfo.targetActivity)
+        assertFalse(aliasInfo.exported)
+        registerActivity(ALLOWED_PATH, ManifestAliasActivity::class.java)
+
+        val exception = assertThrows(IllegalArgumentException::class.java) {
+            KRouter.init(application, policyFor(ManifestAliasActivity::class.java))
+        }
+        assertTrue(exception.message.orEmpty().contains("not an alias"))
+    }
+
+    @Test
     fun policyBindingRejectsDisabledApplication() {
         registerActivity(ALLOWED_PATH, ManifestInternalActivity::class.java)
         application.packageManager.setApplicationEnabledSetting(
@@ -553,6 +570,7 @@ class ExternalDeepLinkSecurityTest {
 }
 
 class ManifestInternalActivity : Activity()
+class ManifestAliasActivity : Activity()
 class ManifestReplacementActivity : Activity()
 class ManifestExportedActivity : Activity()
 class ManifestDisabledActivity : Activity()

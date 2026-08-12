@@ -187,7 +187,7 @@ internal class Router private constructor() {
         return try {
             ActivityHandler(routeMetadata).handleImmediately(context, navigator)
             true
-        } catch (exception: RuntimeException) {
+        } catch (exception: HandleException) {
             navigator.routeFailedCallback?.invoke(navigator, routeMetadata.clazz.name)
             throw exception
         }

@@ -49,9 +49,20 @@ def generatedInjector = "fixture.consumer.${injectionTarget.replace('.', '_')}_K
 def generatedTypeToken = "${generatedInjector}\$exInject\$resolved0\$1".toString()
 def typeToken = 'com.github.richardwrq.krouter.api.utils.TypeToken'
 def injectedPayload = 'fixture.consumer.ConsumerPayload'
+def providerImplementation = 'fixture.consumer.FixtureSerializationProvider'
+def providerInterface = 'com.github.richardwrq.krouter.api.interfaces.IProvider'
+def serializationProviderInterface =
+        'com.github.richardwrq.krouter.api.interfaces.SerializationProvider'
+def interceptorImplementation = 'fixture.consumer.FixtureRouteInterceptor'
+def interceptorInterface = 'com.github.richardwrq.krouter.api.interfaces.IRouteInterceptor'
+def platformFragment = 'fixture.consumer.ConsumerPlatformFragment'
+def platformFragmentBase = 'android.app.Fragment'
+def androidXFragment = 'fixture.consumer.ConsumerAndroidXFragment'
+def androidXFragmentBase = 'androidx.fragment.app.Fragment'
 
 def reflectionEntryPoints = [
         'com.github.richardwrq.krouter.KRouter_RouteLoader_app',
+        'com.github.richardwrq.krouter.KRouter_InterceptorLoader_app',
         'com.github.richardwrq.krouter.KRouter_ProviderLoader_app',
         'com.github.richardwrq.krouter.KRouter_InterceptorLoader_external',
         'com.github.richardwrq.krouter.KRouter_ProviderLoader_external',
@@ -61,7 +72,7 @@ def reflectionEntryPoints = [
 
 tasks.register('verifyConsumerRules') {
     group = 'verification'
-    description = 'Checks KRouter reflection entry points and TypeToken signatures after R8.'
+    description = 'Checks KRouter reflection construction and TypeToken signatures after R8.'
     dependsOn 'assembleRelease'
 
     def mapping = layout.buildDirectory.file('outputs/mapping/release/mapping.txt')
@@ -87,6 +98,15 @@ tasks.register('verifyConsumerRules') {
                 throw new GradleException("R8 mapping is missing ${originalName}")
             }
             mappingLine.substring(prefix.length(), mappingLine.length() - 1)
+        }
+        def mappedClassOrOriginal = { String originalName ->
+            def prefix = "${originalName} -> ".toString()
+            def mappingLine = mappingLines.find {
+                it.startsWith(prefix) && it.endsWith(':')
+            }
+            mappingLine == null
+                    ? originalName
+                    : mappingLine.substring(prefix.length(), mappingLine.length() - 1)
         }
 
         def mappedTypeTokenSubclass = mappedClass(generatedTypeToken)
@@ -142,6 +162,72 @@ tasks.register('verifyConsumerRules') {
         def descriptor = { String className ->
             "L${className.replace('.', '/')};".toString()
         }
+        def classBlock = { String mappedName ->
+            def classDescriptor = descriptor(mappedName)
+            def descriptorIndex = dexDump.indexOf(
+                    "Class descriptor  : '${classDescriptor}'")
+            if (descriptorIndex < 0) {
+                throw new GradleException("Shrunk DEX is missing ${mappedName}")
+            }
+            def blockStart = dexDump.lastIndexOf('\nClass #', descriptorIndex)
+            def blockEnd = dexDump.indexOf('\nClass #', descriptorIndex + 1)
+            if (blockStart < 0) {
+                blockStart = 0
+            }
+            if (blockEnd < 0) {
+                blockEnd = dexDump.length()
+            }
+            dexDump.substring(blockStart, blockEnd)
+        }
+        def assertConcretePublicNoArg = { String originalName ->
+            def mappedName = mappedClass(originalName)
+            if (mappedName.startsWith('R8$$REMOVED$$CLASS$$')) {
+                throw new GradleException(
+                        "R8 removed reflectively constructed class ${originalName}")
+            }
+            def block = classBlock(mappedName)
+            def accessFlags = block.readLines().find {
+                it.trim().startsWith('Access flags')
+            }
+            if (accessFlags == null || accessFlags.contains('ABSTRACT') ||
+                    accessFlags.contains('INTERFACE')) {
+                throw new GradleException(
+                        "R8 made ${originalName} non-concrete: ${accessFlags}")
+            }
+            def publicNoArgConstructor = block =~
+                    /(?s)name\s+: '<init>'.*?type\s+: '\(\)V'.*?access\s+: 0x[0-9a-fA-F]+ \(PUBLIC CONSTRUCTOR\)/
+            if (!publicNoArgConstructor.find()) {
+                throw new GradleException(
+                        "R8 removed the public no-arg constructor from ${originalName}")
+            }
+            mappedName
+        }
+        def assertDirectTypeRelation = { String originalName, String relatedName ->
+            def mappedName = mappedClass(originalName)
+            def mappedRelatedName = mappedClassOrOriginal(relatedName)
+            def block = classBlock(mappedName)
+            def staticFieldsIndex = block.indexOf('  Static fields')
+            def typeHeader = staticFieldsIndex < 0
+                    ? block
+                    : block.substring(0, staticFieldsIndex)
+            if (!typeHeader.contains("'${descriptor(mappedRelatedName)}'")) {
+                throw new GradleException(
+                        "R8 broke the type relation ${originalName} -> ${relatedName}")
+            }
+        }
+
+        [
+                providerImplementation,
+                interceptorImplementation,
+                platformFragment,
+                androidXFragment
+        ].each(assertConcretePublicNoArg)
+        assertDirectTypeRelation(providerImplementation, serializationProviderInterface)
+        assertDirectTypeRelation(serializationProviderInterface, providerInterface)
+        assertDirectTypeRelation(interceptorImplementation, interceptorInterface)
+        assertDirectTypeRelation(platformFragment, platformFragmentBase)
+        assertDirectTypeRelation(androidXFragment, androidXFragmentBase)
+
         [generatedInjector, injectionTarget].each { className ->
             if (!dexDump.contains("Class descriptor  : '${descriptor(className)}'")) {
                 throw new GradleException(
