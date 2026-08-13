@@ -1,5 +1,7 @@
 # KRouter
 
+**简体中文** | [English](README_EN.md)
+
 KRouter 是一个面向 Android 的注解驱动路由框架，支持 Activity、Service、Fragment、拦截器、Provider 和字段注入，也支持 Java/Kotlin 混合工程。
 
 > **Revival beta:** 当前维护线为 `0.2.0-beta.1`。源码已迁移到现代 Android/Gradle 工具链，但 API 与二进制兼容性尚未稳定，也没有可供生产使用的稳定 Maven 制品。若提供 GitHub prerelease 附件，它们仅用于源码评估和兼容性测试；历史 Bintray/JCenter 下载方式已经失效，请勿继续使用旧坐标。
@@ -51,7 +53,7 @@ dependencies {
 }
 ```
 
-这段配置仅适用于本仓库源码构建，不代表已经发布了可供外部项目解析的插件或库坐标。在维护版制品发布并经过兼容性验证前，建议通过示例应用评估，不要依赖旧的 `0.1.x` Bintray/JCenter 制品。
+这段配置仅适用于本仓库源码构建，不代表已经向受支持的公共 Maven 仓库发布了可供外部项目解析的维护版插件或库坐标。在受维护的 `0.2.x` 坐标发布且兼容性承诺明确前，建议通过示例应用或 GitHub prerelease 附件评估，不要依赖旧的 `0.1.x` Bintray/JCenter 制品。
 
 如需检查 Maven metadata、POM、源码包和 Gradle plugin marker，可以生成仅位于仓库 `build/repository/` 的本地测试仓库：
 
